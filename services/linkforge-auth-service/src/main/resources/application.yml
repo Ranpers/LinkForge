@@ -1,0 +1,50 @@
+server:
+  port: 9000
+
+spring:
+  application:
+    name: linkforge-auth-service
+
+  security:
+    user:
+      name: linkforge
+      password: dev-password
+      roles:
+        - USER
+
+    oauth2:
+      authorizationserver:
+        issuer: http://127.0.0.1:9000
+
+        client:
+          smoke-test:
+            registration:
+              client-id: linkforge-smoke
+              client-secret: "{noop}dev-secret"
+
+              client-authentication-methods:
+                - client_secret_basic
+
+              authorization-grant-types:
+                - authorization_code
+                - refresh_token
+
+              redirect-uris:
+                - http://127.0.0.1:8080/authorized
+
+              scopes:
+                - openid
+                - profile
+                - link.read
+                - link.write
+
+            require-proof-key: false
+            require-authorization-consent: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
