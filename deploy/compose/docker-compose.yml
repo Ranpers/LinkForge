@@ -1,0 +1,98 @@
+# 本地开发环境:中间件跑容器,应用在宿主机 JVM 直连(迭代最快)
+# 默认只启动核心存储:docker compose up -d
+# 按需叠加:--profile nacos / --profile kafka / --profile obs
+name: linkforge
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: linkforge-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # 容器时区与日志时间戳一致,排查问题不换算
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8.8.1
+    container_name: linkforge-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nacos:
+    image: nacos/nacos-server:v3.2.3
+    container_name: linkforge-nacos
+    profiles: ["nacos"]
+    # 2.2.1 起三项鉴权变量缺一不可,缺失直接拒绝启动
+    environment:
+      MODE: standalone
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE}
+      TZ: Asia/Shanghai
+    ports:
+      - "8848:8848"   # OpenAPI / 注册配置主端口
+      - "9848:9848"   # gRPC 客户端通道,SDK 必需
+      # 控制台容器内固定 8080,与 shortlink-gateway 冲突,映射到宿主机 18080
+      - "18080:8080"
+    volumes:
+      - nacos_data:/home/nacos/data
+
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: linkforge-kafka
+    profiles: ["kafka"]
+    # 单节点 combined 模式(broker+controller);宿主机应用直连,advertise 必须 localhost
+    environment:
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      TZ: Asia/Shanghai
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    container_name: linkforge-lgtm
+    profiles: ["obs"]
+    ports:
+      - "3000:3000"   # Grafana UI (admin/admin)
+      - "4317:4317"   # OTLP gRPC,OTel Java Agent 上报口
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  pg_data:
+  redis_data:
+  nacos_data:
+  kafka_data:
