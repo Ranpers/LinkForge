@@ -18,9 +18,8 @@
 
     <modules>
         <module>services/linkforge-gateway</module>
-        <module>services/linkforge-user-service</module>
         <module>services/linkforge-link-service</module>
-        <module>services/linkforge-auth-service</module>
+        <module>services/linkforge-iam-service</module>
     </modules>
 
     <properties>

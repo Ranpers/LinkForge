@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: linkforge-auth-service
+    name: linkforge-iam-service
 
   security:
     user:

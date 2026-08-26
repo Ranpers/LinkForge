@@ -1,11 +1,11 @@
-package io.github.ranpers.linkforge.auth;
+package io.github.ranpers.linkforge.iam;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class LinkForgeAuthApplication {
+public class LinkForgeIamApplication {
     static void main(String[] args) {
-        SpringApplication.run(LinkForgeAuthApplication.class, args);
+        SpringApplication.run(LinkForgeIamApplication.class, args);
     }
 }
