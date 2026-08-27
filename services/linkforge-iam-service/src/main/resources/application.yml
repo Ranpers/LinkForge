@@ -5,6 +5,16 @@ spring:
   application:
     name: linkforge-iam-service
 
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:shortlink}
+    username: ${POSTGRES_USER:shortlink}
+    password: ${POSTGRES_PASSWORD:change-me-pg}
+    # driver-class-name 不用写:Boot 按 jdbc:postgresql:// 自动识别 org.postgresql.Driver
+
+  flyway:
+  # 默认就是 classpath:db/migration,这里显式写出,便于后续按服务/集群区分
+    locations: classpath:db/migration
+
   security:
     user:
       name: linkforge
