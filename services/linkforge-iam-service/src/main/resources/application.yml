@@ -38,7 +38,7 @@ spring:
                 - link.read
                 - link.write
 
-            require-proof-key: false
+            require-proof-key: true
             require-authorization-consent: false
 
 management:
