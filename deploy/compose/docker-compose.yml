@@ -4,11 +4,11 @@
 name: linkforge
 
 services:
-  postgres:
+  postgres-iam:
     image: postgres:18
-    container_name: linkforge-postgres
+    container_name: linkforge-postgres-iam
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_IAM_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       # 容器时区与日志时间戳一致,排查问题不换算
@@ -16,7 +16,26 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data:/var/lib/postgresql
+      - pg_iam_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-link:
+    image: postgres:18
+    container_name: linkforge-postgres-link
+    environment:
+      POSTGRES_DB: ${POSTGRES_LINK_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # 容器时区与日志时间戳一致,排查问题不换算
+      TZ: Asia/Shanghai
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_link_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -92,7 +111,8 @@ services:
       - "4318:4318"   # OTLP HTTP
 
 volumes:
-  pg_data:
+  pg_iam_data:
+  pg_link_data:
   redis_data:
   nacos_data:
   kafka_data:
