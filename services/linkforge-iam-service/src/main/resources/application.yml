@@ -16,12 +16,6 @@ spring:
     locations: classpath:db/migration
 
   security:
-    user:
-      name: linkforge
-      password: dev-password
-      roles:
-        - USER
-
     oauth2:
       authorizationserver:
         issuer: http://127.0.0.1:9000
@@ -58,3 +52,7 @@ management:
         include:
           - health
           - info
+
+# 显式约定 XML 位置，避免 Mapper SQL 依赖 starter 的隐式默认值
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml

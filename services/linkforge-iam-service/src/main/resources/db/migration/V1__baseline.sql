@@ -15,7 +15,7 @@ CREATE TABLE t_user
 (
     id         uuid PRIMARY KEY      DEFAULT uuidv7(),
     username   varchar(64)  NOT NULL UNIQUE,
-    password   varchar(255) NOT NULL,           -- 密码哈希(Argon2),禁明文
+    password   varchar(255) NOT NULL,           -- 密码哈希(BCrypt),禁明文
     email      varchar(128),
     real_name  varchar(64),
     status     smallint     NOT NULL DEFAULT 1, -- 1=正常 0=禁用
