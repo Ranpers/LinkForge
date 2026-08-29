@@ -58,4 +58,4 @@ management:
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   # MyBatis 本身不内置 java.util.UUID 映射；显式注册 PostgreSQL UUID TypeHandler。
-  type-handlers-package: io.github.ranpers.linkforge.iam.config.mybatis
+  type-handlers-package: io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis

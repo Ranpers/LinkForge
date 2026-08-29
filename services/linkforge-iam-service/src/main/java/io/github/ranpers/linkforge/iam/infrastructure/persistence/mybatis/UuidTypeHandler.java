@@ -1,4 +1,4 @@
-package io.github.ranpers.linkforge.iam.config.mybatis;
+package io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;

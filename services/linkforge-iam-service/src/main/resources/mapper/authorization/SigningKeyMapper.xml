@@ -3,14 +3,14 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="io.github.ranpers.linkforge.iam.config.jwk.JwkKeyMapper">
+<mapper namespace="io.github.ranpers.linkforge.iam.authorization.adapter.out.persistence.SigningKeyMapper">
 
     <select id="acquireInitializationLock" resultType="boolean">
         SELECT pg_advisory_xact_lock(#{lockId}) IS NULL
     </select>
 
     <select id="findActive"
-            resultType="io.github.ranpers.linkforge.iam.config.jwk.StoredJwk">
+            resultType="io.github.ranpers.linkforge.iam.authorization.adapter.out.persistence.SigningKeyDO">
         SELECT key_id AS "keyId",
                algorithm,
                public_key_der AS "publicKeyDer",

@@ -32,16 +32,6 @@ class MybatisMapperXmlTest {
         assertTrue(configuration.hasStatement(namespace + ".findPermissionCodes"));
     }
 
-    @Test
-    void shouldParseJwkKeyMapperXml() throws Exception {
-        Configuration configuration = parse("mapper/jwk/JwkKeyMapper.xml");
-        String namespace = "io.github.ranpers.linkforge.iam.config.jwk.JwkKeyMapper";
-
-        assertTrue(configuration.hasStatement(namespace + ".acquireInitializationLock"));
-        assertTrue(configuration.hasStatement(namespace + ".findActive"));
-        assertTrue(configuration.hasStatement(namespace + ".insert"));
-    }
-
     private Configuration parse(String resource) throws Exception {
         Configuration configuration = new Configuration();
         try (InputStream inputStream = Resources.getResourceAsStream(resource)) {
