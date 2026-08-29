@@ -1,8 +1,8 @@
 package io.github.ranpers.linkforge.iam.user.adapter.out.persistence;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.mybatisflex.annotation.Id;
+import com.mybatisflex.annotation.KeyType;
+import com.mybatisflex.annotation.Table;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -11,10 +11,11 @@ import java.util.UUID;
  * t_user 持久化模型:仅出站适配器可见,与领域模型 User 互不渗透
  */
 @SuppressWarnings("unused")
-@TableName("t_user")
+@Table("t_user")
 public class UserDO {
 
-    @TableId(type = IdType.INPUT)
+    /** 主键由应用侧 UUIDv7 生成,None=框架不做任何主键填充 */
+    @Id(keyType = KeyType.None)
     private UUID id;
 
     private String username;

@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.user.adapter.out.persistence;
 
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.mybatisflex.core.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper

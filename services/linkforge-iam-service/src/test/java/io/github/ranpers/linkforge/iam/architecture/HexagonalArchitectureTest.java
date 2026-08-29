@@ -20,7 +20,7 @@ class HexagonalArchitectureTest {
             ".infrastructure.",
             "org.springframework.",
             "org.apache.ibatis.",
-            "com.baomidou.",
+            "com.mybatisflex.",
             "com.nimbusds."
     );
 
@@ -29,7 +29,7 @@ class HexagonalArchitectureTest {
             ".config.",
             ".infrastructure.",
             "org.apache.ibatis.",
-            "com.baomidou.",
+            "com.mybatisflex.",
             "com.nimbusds.",
             "org.springframework.security.",
             "org.springframework.web."
