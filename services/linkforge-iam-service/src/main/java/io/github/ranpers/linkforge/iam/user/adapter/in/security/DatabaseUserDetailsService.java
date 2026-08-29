@@ -36,11 +36,12 @@ public class DatabaseUserDetailsService implements UserDetailsService {
                 .map(SimpleGrantedAuthority::new)
                 .forEach(authorities::add);
 
-        return org.springframework.security.core.userdetails.User
-                .withUsername(loginUser.username())
-                .password(loginUser.passwordHash())
-                .disabled(!loginUser.enabled())
-                .authorities(authorities)
-                .build();
+        return new IamUserPrincipal(
+                loginUser.id(),
+                loginUser.username(),
+                loginUser.passwordHash(),
+                loginUser.enabled(),
+                authorities
+        );
     }
 }
