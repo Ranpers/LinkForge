@@ -32,8 +32,8 @@ public class MybatisLoginUserQuery implements LoginUserQuery {
                 new PasswordHash(row.getPassword()),
                 UserStatus.fromDatabaseValue(row.getStatus()),
                 row.getDeletedAt() != null,
-                new LinkedHashSet<>(loginUserMapper.findRoleCodes(row.getId())),
-                new LinkedHashSet<>(loginUserMapper.findPermissionCodes(row.getId()))
+                new LinkedHashSet<>(row.getRoleCodes()),
+                new LinkedHashSet<>(row.getPermissionCodes())
         ));
     }
 }

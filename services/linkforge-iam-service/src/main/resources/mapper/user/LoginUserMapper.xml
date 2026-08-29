@@ -5,28 +5,37 @@
 
 <mapper namespace="io.github.ranpers.linkforge.iam.user.adapter.out.persistence.auth.LoginUserMapper">
 
-    <select id="findByUsername"
-            resultType="io.github.ranpers.linkforge.iam.user.adapter.out.persistence.auth.LoginUserRow">
-        SELECT id, username, password, status, deleted_at
-        FROM t_user
-        WHERE username = #{username}
-    </select>
+    <resultMap id="loginUserRowMap"
+               type="io.github.ranpers.linkforge.iam.user.adapter.out.persistence.auth.LoginUserRow">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="status" property="status"/>
+        <result column="deleted_at" property="deletedAt"/>
+        <result column="role_codes" property="roleCodes"
+                typeHandler="io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis.TextArrayTypeHandler"/>
+        <result column="permission_codes" property="permissionCodes"
+                typeHandler="io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis.TextArrayTypeHandler"/>
+    </resultMap>
 
-    <select id="findRoleCodes" resultType="java.lang.String">
-        SELECT role.code
-        FROM t_user_role user_role
-        JOIN t_role role ON role.id = user_role.role_id
-        WHERE user_role.user_id = #{userId}
-        ORDER BY role.code
-    </select>
-
-    <select id="findPermissionCodes" resultType="java.lang.String">
-        SELECT DISTINCT permission.code
-        FROM t_user_role user_role
-        JOIN t_role_permission role_permission ON role_permission.role_id = user_role.role_id
-        JOIN t_permission permission ON permission.id = role_permission.permission_id
-        WHERE user_role.user_id = #{userId}
-        ORDER BY permission.code
+    <!-- 登录快照约束:角色/权限由 PG 在服务端聚合进数组,必须维持单条 SQL 单次往返 -->
+    <select id="findByUsername" resultMap="loginUserRowMap">
+        SELECT u.id,
+               u.username,
+               u.password,
+               u.status,
+               u.deleted_at,
+               COALESCE((SELECT array_agg(DISTINCT assigned_role.code ORDER BY assigned_role.code)
+                         FROM t_user_role user_role
+                         JOIN t_role assigned_role ON assigned_role.id = user_role.role_id
+                         WHERE user_role.user_id = u.id), '{}') AS role_codes,
+               COALESCE((SELECT array_agg(DISTINCT permission.code ORDER BY permission.code)
+                         FROM t_user_role user_role
+                         JOIN t_role_permission role_permission ON role_permission.role_id = user_role.role_id
+                         JOIN t_permission permission ON permission.id = role_permission.permission_id
+                         WHERE user_role.user_id = u.id), '{}') AS permission_codes
+        FROM t_user u
+        WHERE u.username = #{username}
     </select>
 
 </mapper>

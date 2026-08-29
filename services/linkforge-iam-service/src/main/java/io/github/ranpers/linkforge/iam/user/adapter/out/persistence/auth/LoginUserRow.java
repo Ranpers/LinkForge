@@ -1,6 +1,7 @@
 package io.github.ranpers.linkforge.iam.user.adapter.out.persistence.auth;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @SuppressWarnings("unused")
@@ -11,6 +12,8 @@ public class LoginUserRow {
     private String password;
     private Integer status;
     private OffsetDateTime deletedAt;
+    private List<String> roleCodes;
+    private List<String> permissionCodes;
 
     public UUID getId() {
         return id;
@@ -50,5 +53,21 @@ public class LoginUserRow {
 
     public void setDeletedAt(OffsetDateTime deletedAt) {
         this.deletedAt = deletedAt;
+    }
+
+    public List<String> getRoleCodes() {
+        return roleCodes;
+    }
+
+    public void setRoleCodes(List<String> roleCodes) {
+        this.roleCodes = roleCodes;
+    }
+
+    public List<String> getPermissionCodes() {
+        return permissionCodes;
+    }
+
+    public void setPermissionCodes(List<String> permissionCodes) {
+        this.permissionCodes = permissionCodes;
     }
 }

@@ -28,12 +28,14 @@ class MybatisMapperXmlTest {
                 "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.auth.LoginUserMapper";
 
         assertTrue(configuration.hasStatement(namespace + ".findByUsername"));
-        assertTrue(configuration.hasStatement(namespace + ".findRoleCodes"));
-        assertTrue(configuration.hasStatement(namespace + ".findPermissionCodes"));
+        assertTrue(configuration.hasResultMap(namespace + ".loginUserRowMap"));
     }
 
     private Configuration parse(String resource) throws Exception {
         Configuration configuration = new Configuration();
+        // 与 application.yml 的 mybatis-plus.type-handlers-package 保持一致
+        configuration.getTypeHandlerRegistry().register(
+                "io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis");
         try (InputStream inputStream = Resources.getResourceAsStream(resource)) {
             new XMLMapperBuilder(
                     inputStream,
