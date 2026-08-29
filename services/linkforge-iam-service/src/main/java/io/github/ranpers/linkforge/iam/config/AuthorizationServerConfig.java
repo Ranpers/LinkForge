@@ -21,6 +21,7 @@ public class AuthorizationServerConfig {
                 = new OAuth2AuthorizationServerConfigurer();
         httpSecurity
                 .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
                 .with(authorizationServerConfigurer, configure
                         -> configure.oidc(Customizer.withDefaults())
                 )
