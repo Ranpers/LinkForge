@@ -5,11 +5,40 @@
 
 <mapper namespace="io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper">
 
+    <!-- 叶子侧共享锁:用户分配同一角色可并发,但与扇出侧 FOR UPDATE 冲突 -->
+    <select id="lockRoleSharedByCode" resultType="java.util.UUID">
+        SELECT id
+        FROM t_role
+        WHERE code = #{roleCode}
+        FOR KEY SHARE
+    </select>
+
+    <!-- 扇出侧独占锁:角色直绑域名/域名组变更必须先取此锁 -->
+    <select id="lockRoleExclusiveByCode" resultType="java.util.UUID">
+        SELECT id
+        FROM t_role
+        WHERE code = #{roleCode}
+        FOR UPDATE
+    </select>
+
     <insert id="insertByRoleCode">
         INSERT INTO t_user_role (user_id, role_id)
         SELECT #{userId}, role.id
         FROM t_role role
         WHERE role.code = #{roleCode}
     </insert>
+
+    <select id="findRoleGrantedDomainIds" resultType="java.util.UUID">
+        SELECT role_domain.domain_id
+        FROM t_role assigned_role
+        JOIN t_role_domain role_domain ON role_domain.role_id = assigned_role.id
+        WHERE assigned_role.code = #{roleCode}
+        UNION
+        SELECT dgd.domain_id
+        FROM t_role assigned_role
+        JOIN t_role_domain_group role_domain_group ON role_domain_group.role_id = assigned_role.id
+        JOIN t_domain_group_domain dgd ON dgd.domain_group_id = role_domain_group.domain_group_id
+        WHERE assigned_role.code = #{roleCode}
+    </select>
 
 </mapper>

@@ -19,6 +19,23 @@ class MybatisMapperXmlTest {
                 "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper"
                         + ".insertByRoleCode"
         ));
+        assertTrue(configuration.hasStatement(
+                "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper"
+                        + ".findRoleGrantedDomainIds"
+        ));
+    }
+
+    @Test
+    void shouldParseGrantProjectionMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/grant/GrantProjectionMapper.xml");
+        String namespace =
+                "io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantProjectionMapper";
+
+        assertTrue(configuration.hasStatement(namespace + ".insertPlaceholders"));
+        assertTrue(configuration.hasStatement(namespace + ".selectLocked"));
+        assertTrue(configuration.hasStatement(namespace + ".saveFlip"));
+        assertTrue(configuration.hasStatement(namespace + ".isGranted"));
+        assertTrue(configuration.hasStatement(namespace + ".insertOutbox"));
     }
 
     @Test

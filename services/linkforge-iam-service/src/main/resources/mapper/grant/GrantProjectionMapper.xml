@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantProjectionMapper">
+
+    <!-- 缺失的流先落初始行(granted=false, revision=0),否则 FOR UPDATE 锁不住不存在的行 -->
+    <insert id="insertPlaceholders">
+        INSERT INTO t_user_domain_grant_state (user_id, domain_id, granted, revision)
+        VALUES
+        <foreach collection="pairs" item="p" separator=",">
+            (#{p.userId}, #{p.domainId}, FALSE, 0)
+        </foreach>
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <!-- 调用方保证 pairs 已按 userId,domainId 排序;锁定持续到事务结束 -->
+    <select id="selectLocked" resultType="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantStateRow">
+        SELECT user_id AS userId, domain_id AS domainId, granted, revision
+        FROM t_user_domain_grant_state
+        WHERE (user_id, domain_id) IN
+        <foreach collection="pairs" item="p" open="(" separator="," close=")">
+            (#{p.userId}, #{p.domainId})
+        </foreach>
+        ORDER BY user_id, domain_id
+        FOR UPDATE
+    </select>
+
+    <update id="saveFlip">
+        UPDATE t_user_domain_grant_state
+        SET granted = #{granted}, revision = #{revision}, updated_at = now()
+        WHERE user_id = #{userId} AND domain_id = #{domainId}
+    </update>
+
+    <!-- 四路授权并集,授权事实的权威来源;不读投影 -->
+    <select id="isGranted" resultType="boolean">
+        SELECT EXISTS(
+                   SELECT 1
+                   FROM t_user_role user_role
+                   JOIN t_role_domain role_domain ON role_domain.role_id = user_role.role_id
+                   WHERE user_role.user_id = #{userId} AND role_domain.domain_id = #{domainId}
+               ) OR EXISTS(
+                   SELECT 1
+                   FROM t_user_role user_role
+                   JOIN t_role_domain_group role_domain_group ON role_domain_group.role_id = user_role.role_id
+                   JOIN t_domain_group_domain dgd ON dgd.domain_group_id = role_domain_group.domain_group_id
+                   WHERE user_role.user_id = #{userId} AND dgd.domain_id = #{domainId}
+               ) OR EXISTS(
+                   SELECT 1
+                   FROM t_user_domain user_domain
+                   WHERE user_domain.user_id = #{userId} AND user_domain.domain_id = #{domainId}
+               ) OR EXISTS(
+                   SELECT 1
+                   FROM t_user_domain_group user_domain_group
+                   JOIN t_domain_group_domain dgd ON dgd.domain_group_id = user_domain_group.domain_group_id
+                   WHERE user_domain_group.user_id = #{userId} AND dgd.domain_id = #{domainId}
+               ) AS granted
+    </select>
+
+    <!-- 幂等由消费端 Inbox 保证;id 必须等于 payload.eventId(信封一致性 CHECK) -->
+    <insert id="insertOutbox">
+        INSERT INTO t_outbox_event (id, event_type, stream_key, partition_key, payload)
+        VALUES (#{id}, #{eventType}, #{streamKey}, #{partitionKey}, #{payload}::jsonb)
+    </insert>
+
+</mapper>

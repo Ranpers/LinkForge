@@ -1,12 +1,13 @@
-package io.github.ranpers.linkforge.iam.user.adapter.out.security;
+package io.github.ranpers.linkforge.iam.infrastructure.id;
 
 import java.security.SecureRandom;
 import java.util.UUID;
 
 /**
- * IAM 用户 ID 的 UUIDv7 生成实现。
+ * 进程内唯一 UUIDv7 生成器:单逻辑毫秒内序列耗尽则推进 1ms,严格单调且不回绕。
+ * 用户 ID 与 Outbox eventId 共用同一生成器,保证全进程时钟语义一致。
  */
-final class UuidV7 {
+public final class UuidV7 {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
@@ -16,10 +17,7 @@ final class UuidV7 {
     private UuidV7() {
     }
 
-    /**
-     * 时钟停滞或回拨时沿用逻辑时间；单逻辑毫秒序列耗尽后推进 1ms，保证进程内严格单调且不回绕。
-     */
-    static synchronized UUID generate() {
+    public static synchronized UUID generate() {
         long wallClockTimestamp = System.currentTimeMillis();
         if (wallClockTimestamp > lastTimestamp) {
             lastTimestamp = wallClockTimestamp;
