@@ -21,7 +21,7 @@ class MybatisMapperXmlTest {
         ));
         assertTrue(configuration.hasStatement(
                 "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper"
-                        + ".findRoleGrantedDomainIds"
+                        + ".stageGrantedDomainsForAssignment"
         ));
     }
 
@@ -31,11 +31,25 @@ class MybatisMapperXmlTest {
         String namespace =
                 "io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantProjectionMapper";
 
-        assertTrue(configuration.hasStatement(namespace + ".insertPlaceholders"));
-        assertTrue(configuration.hasStatement(namespace + ".selectLocked"));
-        assertTrue(configuration.hasStatement(namespace + ".saveFlip"));
+        assertTrue(configuration.hasStatement(namespace + ".createAffectedPairBuffer"));
+        assertTrue(configuration.hasStatement(namespace + ".clearAffectedPairBuffer"));
+        assertTrue(configuration.hasStatement(namespace + ".stagePairs"));
+        assertTrue(configuration.hasStatement(namespace + ".insertPlaceholdersFromBuffer"));
+        assertTrue(configuration.hasStatement(namespace + ".lockStagedGrantStates"));
+        assertTrue(configuration.hasStatement(namespace + ".reconcileAndInsertOutbox"));
         assertTrue(configuration.hasStatement(namespace + ".isGranted"));
-        assertTrue(configuration.hasStatement(namespace + ".insertOutbox"));
+    }
+
+    @Test
+    void shouldParseOutboxDispatchMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/grant/OutboxDispatchMapper.xml");
+        String namespace =
+                "io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.OutboxDispatchMapper";
+
+        assertTrue(configuration.hasStatement(namespace + ".lockDueRows"));
+        assertTrue(configuration.hasStatement(namespace + ".markSent"));
+        assertTrue(configuration.hasStatement(namespace + ".scheduleRetry"));
+        assertTrue(configuration.hasStatement(namespace + ".park"));
     }
 
     @Test
@@ -50,7 +64,7 @@ class MybatisMapperXmlTest {
 
     private Configuration parse(String resource) throws Exception {
         Configuration configuration = new Configuration();
-        // 与 application.yml 的 mybatis-plus.type-handlers-package 保持一致
+        // 与 application.yml 的 mybatis-flex.type-handlers-package 保持一致
         configuration.getTypeHandlerRegistry().register(
                 "io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis");
         try (InputStream inputStream = Resources.getResourceAsStream(resource)) {

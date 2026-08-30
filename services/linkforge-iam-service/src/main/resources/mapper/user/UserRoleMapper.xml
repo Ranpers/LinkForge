@@ -28,17 +28,25 @@
         WHERE role.code = #{roleCode}
     </insert>
 
-    <select id="findRoleGrantedDomainIds" resultType="java.util.UUID">
-        SELECT role_domain.domain_id
-        FROM t_role assigned_role
-        JOIN t_role_domain role_domain ON role_domain.role_id = assigned_role.id
-        WHERE assigned_role.code = #{roleCode}
-        UNION
-        SELECT dgd.domain_id
-        FROM t_role assigned_role
-        JOIN t_role_domain_group role_domain_group ON role_domain_group.role_id = assigned_role.id
-        JOIN t_domain_group_domain dgd ON dgd.domain_group_id = role_domain_group.domain_group_id
-        WHERE assigned_role.code = #{roleCode}
-    </select>
+    <!-- 影响范围直接进入当前事务的临时表，不把大集合搬进 JVM。 -->
+    <insert id="stageGrantedDomainsForAssignment">
+        INSERT INTO lf_grant_affected_pair (user_id, domain_id)
+        SELECT #{userId}, granted_domain.domain_id
+        FROM (
+                 SELECT role_domain.domain_id
+                 FROM t_role assigned_role
+                          JOIN t_role_domain role_domain ON role_domain.role_id = assigned_role.id
+                 WHERE assigned_role.code = #{roleCode}
+                 UNION
+                 SELECT dgd.domain_id
+                 FROM t_role assigned_role
+                          JOIN t_role_domain_group role_domain_group
+                               ON role_domain_group.role_id = assigned_role.id
+                          JOIN t_domain_group_domain dgd
+                               ON dgd.domain_group_id = role_domain_group.domain_group_id
+                 WHERE assigned_role.code = #{roleCode}
+             ) granted_domain
+        ON CONFLICT DO NOTHING
+    </insert>
 
 </mapper>

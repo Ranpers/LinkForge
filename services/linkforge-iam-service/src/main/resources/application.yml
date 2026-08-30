@@ -15,6 +15,18 @@ spring:
     # 默认就是 classpath:db/migration,这里显式写出,便于后续按服务/集群区分
     locations: classpath:db/migration
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      # Kafka 幂等生产者只消除同一 producer session 内部重试产生的重复;
+      # Outbox 在 Kafka ACK 后、数据库提交前崩溃仍可能重复,由 Link Inbox 去重。
+      properties:
+        enable.idempotence: true
+        acks: all
+        max.in.flight.requests.per.connection: 5
+
   security:
     oauth2:
       authorizationserver:
@@ -59,3 +71,15 @@ mybatis-flex:
   mapper-locations: classpath*:/mapper/**/*.xml
   # MyBatis 本身不内置 java.util.UUID 映射；显式注册 PostgreSQL UUID TypeHandler。
   type-handlers-package: io.github.ranpers.linkforge.iam.infrastructure.persistence.mybatis
+
+linkforge:
+  outbox:
+    # Kafka 是可选 compose profile;默认关闭,避免未启动 Kafka 时误将事件重试至 parked。
+    enabled: ${OUTBOX_ENABLED:false}
+    topic: ${OUTBOX_TOPIC:linkforge.iam.authorization.v1}
+    poll-interval: ${OUTBOX_POLL_INTERVAL:1s}
+    batch-size: ${OUTBOX_BATCH_SIZE:50}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:8}
+    base-backoff: ${OUTBOX_BASE_BACKOFF:1s}
+    max-backoff: ${OUTBOX_MAX_BACKOFF:5m}
+    send-timeout: ${OUTBOX_SEND_TIMEOUT:10s}

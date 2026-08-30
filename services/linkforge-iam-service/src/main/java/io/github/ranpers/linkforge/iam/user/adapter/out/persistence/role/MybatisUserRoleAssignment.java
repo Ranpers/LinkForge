@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role;
 
-import io.github.ranpers.linkforge.iam.grant.application.AffectedPair;
-import io.github.ranpers.linkforge.iam.grant.application.GrantProjectionPipeline;
+import io.github.ranpers.linkforge.iam.grant.application.GrantBatchEngine;
+import io.github.ranpers.linkforge.iam.grant.application.GrantChangePlan;
 import io.github.ranpers.linkforge.iam.role.domain.RoleCode;
 import io.github.ranpers.linkforge.iam.user.application.RoleAssignmentFailedException;
 import io.github.ranpers.linkforge.iam.user.application.port.out.UserRoleAssignment;
@@ -16,30 +16,28 @@ import org.springframework.stereotype.Repository;
 public class MybatisUserRoleAssignment implements UserRoleAssignment {
 
     private final UserRoleMapper userRoleMapper;
-    private final GrantProjectionPipeline projectionPipeline;
+    private final GrantBatchEngine grantBatchEngine;
 
-    public MybatisUserRoleAssignment(UserRoleMapper userRoleMapper, GrantProjectionPipeline projectionPipeline) {
+    public MybatisUserRoleAssignment(UserRoleMapper userRoleMapper, GrantBatchEngine grantBatchEngine) {
         this.userRoleMapper = userRoleMapper;
-        this.projectionPipeline = projectionPipeline;
+        this.grantBatchEngine = grantBatchEngine;
     }
 
     @Override
     public void assign(UserId userId, RoleCode roleCode) {
-        projectionPipeline.project(
+        grantBatchEngine.execute(new GrantChangePlan(
                 () -> {
                     if (userRoleMapper.lockRoleSharedByCode(roleCode.name()) == null) {
                         throw new RoleAssignmentFailedException(roleCode);
                     }
                 },
-                () -> userRoleMapper.findRoleGrantedDomainIds(roleCode.name()).stream()
-                        .map(domainId -> new AffectedPair(userId.value(), domainId))
-                        .toList(),
+                () -> userRoleMapper.stageGrantedDomainsForAssignment(userId.value(), roleCode.name()),
                 () -> {
                     int affectedRows = userRoleMapper.insertByRoleCode(userId.value(), roleCode.name());
                     if (affectedRows != 1) {
                         throw new RoleAssignmentFailedException(roleCode);
                     }
                 }
-        );
+        ));
     }
 }

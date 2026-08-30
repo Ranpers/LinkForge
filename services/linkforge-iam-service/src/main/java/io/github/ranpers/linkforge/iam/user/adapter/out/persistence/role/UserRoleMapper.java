@@ -3,7 +3,6 @@ package io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
 import java.util.UUID;
 
 @Mapper
@@ -27,6 +26,9 @@ public interface UserRoleMapper {
             @Param("roleCode") String roleCode
     );
 
-    /** 该角色当前授权的全部域名(直绑 ∨ 经域名组),供投影管道作受影响集合。 */
-    List<UUID> findRoleGrantedDomainIds(@Param("roleCode") String roleCode);
+    /** 该角色当前授权的全部域名(直绑 ∨ 经域名组)直接暂存为批量影响集合。 */
+    int stageGrantedDomainsForAssignment(
+            @Param("userId") UUID userId,
+            @Param("roleCode") String roleCode
+    );
 }

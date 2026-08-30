@@ -5,63 +5,162 @@
 
 <mapper namespace="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantProjectionMapper">
 
-    <!-- 缺失的流先落初始行(granted=false, revision=0),否则 FOR UPDATE 锁不住不存在的行 -->
-    <insert id="insertPlaceholders">
-        INSERT INTO t_user_domain_grant_state (user_id, domain_id, granted, revision)
+    <!-- 每个数据库会话独享；事务提交自动清空，实例间不会互相污染。 -->
+    <update id="createAffectedPairBuffer">
+        CREATE TEMPORARY TABLE IF NOT EXISTS lf_grant_affected_pair
+        (
+            user_id   uuid NOT NULL,
+            domain_id uuid NOT NULL,
+            PRIMARY KEY (user_id, domain_id)
+        ) ON COMMIT DELETE ROWS
+    </update>
+
+    <delete id="clearAffectedPairBuffer">
+        DELETE FROM lf_grant_affected_pair
+    </delete>
+
+    <insert id="stagePairs">
+        INSERT INTO lf_grant_affected_pair (user_id, domain_id)
         VALUES
         <foreach collection="pairs" item="p" separator=",">
-            (#{p.userId}, #{p.domainId}, FALSE, 0)
+            (#{p.userId}, #{p.domainId})
         </foreach>
         ON CONFLICT DO NOTHING
     </insert>
 
-    <!-- 调用方保证 pairs 已按 userId,domainId 排序;锁定持续到事务结束 -->
-    <select id="selectLocked" resultType="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantStateRow">
-        SELECT user_id AS userId, domain_id AS domainId, granted, revision
-        FROM t_user_domain_grant_state
-        WHERE (user_id, domain_id) IN
-        <foreach collection="pairs" item="p" open="(" separator="," close=")">
-            (#{p.userId}, #{p.domainId})
-        </foreach>
+    <!-- 缺失流先落 false/revision=0 占位，否则 FOR UPDATE 锁不住不存在的行。 -->
+    <insert id="insertPlaceholdersFromBuffer">
+        INSERT INTO t_user_domain_grant_state (user_id, domain_id, granted, revision)
+        SELECT user_id, domain_id, FALSE, 0
+        FROM lf_grant_affected_pair
         ORDER BY user_id, domain_id
-        FOR UPDATE
-    </select>
+        ON CONFLICT DO NOTHING
+    </insert>
 
-    <update id="saveFlip">
-        UPDATE t_user_domain_grant_state
-        SET granted = #{granted}, revision = #{revision}, updated_at = now()
-        WHERE user_id = #{userId} AND domain_id = #{domainId}
+    <!-- 在数据库内按固定顺序加锁，不把锁定行传回 JVM。 -->
+    <update id="lockStagedGrantStates">
+        DO $grant_lock$
+        BEGIN
+            PERFORM grant_state.user_id
+            FROM t_user_domain_grant_state grant_state
+                     JOIN lf_grant_affected_pair affected
+                          ON affected.user_id = grant_state.user_id
+                              AND affected.domain_id = grant_state.domain_id
+            ORDER BY grant_state.user_id, grant_state.domain_id
+            FOR UPDATE OF grant_state;
+        END
+        $grant_lock$
     </update>
 
-    <!-- 四路授权并集,授权事实的权威来源;不读投影 -->
+    <!-- 一条集合 SQL 完成四路并集、diff、revision+1 与 Outbox。 -->
+    <insert id="reconcileAndInsertOutbox">
+        WITH authorized AS MATERIALIZED (
+            SELECT affected.user_id, affected.domain_id
+            FROM lf_grant_affected_pair affected
+                     JOIN t_user_role user_role ON user_role.user_id = affected.user_id
+                     JOIN t_role_domain role_domain
+                          ON role_domain.role_id = user_role.role_id
+                              AND role_domain.domain_id = affected.domain_id
+            UNION
+            SELECT affected.user_id, affected.domain_id
+            FROM lf_grant_affected_pair affected
+                     JOIN t_user_role user_role ON user_role.user_id = affected.user_id
+                     JOIN t_role_domain_group role_domain_group
+                          ON role_domain_group.role_id = user_role.role_id
+                     JOIN t_domain_group_domain dgd
+                          ON dgd.domain_group_id = role_domain_group.domain_group_id
+                              AND dgd.domain_id = affected.domain_id
+            UNION
+            SELECT affected.user_id, affected.domain_id
+            FROM lf_grant_affected_pair affected
+                     JOIN t_user_domain user_domain
+                          ON user_domain.user_id = affected.user_id
+                              AND user_domain.domain_id = affected.domain_id
+            UNION
+            SELECT affected.user_id, affected.domain_id
+            FROM lf_grant_affected_pair affected
+                     JOIN t_user_domain_group user_domain_group
+                          ON user_domain_group.user_id = affected.user_id
+                     JOIN t_domain_group_domain dgd
+                          ON dgd.domain_group_id = user_domain_group.domain_group_id
+                              AND dgd.domain_id = affected.domain_id
+        ),
+        changed AS (
+            UPDATE t_user_domain_grant_state grant_state
+                SET granted = (authorized.user_id IS NOT NULL),
+                    revision = grant_state.revision + 1,
+                    updated_at = CAST(#{occurredAt} AS timestamptz)
+                FROM lf_grant_affected_pair affected
+                         LEFT JOIN authorized
+                                   ON authorized.user_id = affected.user_id
+                                       AND authorized.domain_id = affected.domain_id
+                WHERE grant_state.user_id = affected.user_id
+                  AND grant_state.domain_id = affected.domain_id
+                  AND grant_state.granted IS DISTINCT FROM (authorized.user_id IS NOT NULL)
+                RETURNING grant_state.user_id,
+                    grant_state.domain_id,
+                    grant_state.granted,
+                    grant_state.revision
+        ),
+        events AS MATERIALIZED (
+            SELECT uuidv7() AS event_id,
+                   'UserDomainGrantChanged'::varchar AS event_type,
+                   'USER_DOMAIN:' || user_id::text || ':' || domain_id::text AS stream_key,
+                   domain_id::text AS partition_key,
+                   user_id,
+                   domain_id,
+                   granted,
+                   revision
+            FROM changed
+        )
+        INSERT INTO t_outbox_event (id, event_type, stream_key, partition_key, payload)
+        SELECT event_id,
+               event_type,
+               stream_key,
+               partition_key,
+               jsonb_build_object(
+                       'eventId', event_id::text,
+                       'eventType', event_type,
+                       'streamKey', stream_key,
+                       'revision', revision,
+                       'occurredAt', CAST(#{occurredAt} AS timestamptz),
+                       'userId', user_id::text,
+                       'domainId', domain_id::text,
+                       'granted', granted
+               )
+        FROM events
+    </insert>
+
+    <!-- 创建校验等实时查询使用；授权事实的权威来源不读投影。 -->
     <select id="isGranted" resultType="boolean">
         SELECT EXISTS(
                    SELECT 1
                    FROM t_user_role user_role
-                   JOIN t_role_domain role_domain ON role_domain.role_id = user_role.role_id
-                   WHERE user_role.user_id = #{userId} AND role_domain.domain_id = #{domainId}
+                            JOIN t_role_domain role_domain ON role_domain.role_id = user_role.role_id
+                   WHERE user_role.user_id = #{userId}
+                     AND role_domain.domain_id = #{domainId}
                ) OR EXISTS(
                    SELECT 1
                    FROM t_user_role user_role
-                   JOIN t_role_domain_group role_domain_group ON role_domain_group.role_id = user_role.role_id
-                   JOIN t_domain_group_domain dgd ON dgd.domain_group_id = role_domain_group.domain_group_id
-                   WHERE user_role.user_id = #{userId} AND dgd.domain_id = #{domainId}
+                            JOIN t_role_domain_group role_domain_group
+                                 ON role_domain_group.role_id = user_role.role_id
+                            JOIN t_domain_group_domain dgd
+                                 ON dgd.domain_group_id = role_domain_group.domain_group_id
+                   WHERE user_role.user_id = #{userId}
+                     AND dgd.domain_id = #{domainId}
                ) OR EXISTS(
                    SELECT 1
                    FROM t_user_domain user_domain
-                   WHERE user_domain.user_id = #{userId} AND user_domain.domain_id = #{domainId}
+                   WHERE user_domain.user_id = #{userId}
+                     AND user_domain.domain_id = #{domainId}
                ) OR EXISTS(
                    SELECT 1
                    FROM t_user_domain_group user_domain_group
-                   JOIN t_domain_group_domain dgd ON dgd.domain_group_id = user_domain_group.domain_group_id
-                   WHERE user_domain_group.user_id = #{userId} AND dgd.domain_id = #{domainId}
+                            JOIN t_domain_group_domain dgd
+                                 ON dgd.domain_group_id = user_domain_group.domain_group_id
+                   WHERE user_domain_group.user_id = #{userId}
+                     AND dgd.domain_id = #{domainId}
                ) AS granted
     </select>
-
-    <!-- 幂等由消费端 Inbox 保证;id 必须等于 payload.eventId(信封一致性 CHECK) -->
-    <insert id="insertOutbox">
-        INSERT INTO t_outbox_event (id, event_type, stream_key, partition_key, payload)
-        VALUES (#{id}, #{eventType}, #{streamKey}, #{partitionKey}, #{payload}::jsonb)
-    </insert>
 
 </mapper>

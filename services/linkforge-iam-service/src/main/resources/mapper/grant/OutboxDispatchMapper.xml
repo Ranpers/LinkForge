@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.OutboxDispatchMapper">
+
+    <!-- 锁跨 Kafka ACK 等待持有;多实例通过 SKIP LOCKED 各取不同批次。 -->
+    <select id="lockDueRows"
+            resultType="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.OutboxEventRow">
+        SELECT id,
+               event_type AS eventType,
+               stream_key AS streamKey,
+               partition_key AS partitionKey,
+               payload::text AS payload,
+               retry_count AS retryCount
+        FROM t_outbox_event
+        WHERE status = 0
+          AND (next_retry_at IS NULL OR next_retry_at &lt;= now())
+        ORDER BY COALESCE(next_retry_at, created_at), created_at, id
+        LIMIT #{limit}
+        FOR UPDATE SKIP LOCKED
+    </select>
+
+    <update id="markSent">
+        UPDATE t_outbox_event
+        SET status = 1,
+            sent_at = now(),
+            next_retry_at = NULL,
+            last_attempt_at = now(),
+            last_error = NULL
+        WHERE id = #{eventId}
+          AND status = 0
+    </update>
+
+    <update id="scheduleRetry">
+        UPDATE t_outbox_event
+        SET retry_count = #{retryCount},
+            next_retry_at = now() + (#{delayMillis} * interval '1 millisecond'),
+            last_attempt_at = now(),
+            last_error = #{lastError}
+        WHERE id = #{eventId}
+          AND status = 0
+    </update>
+
+    <update id="park">
+        UPDATE t_outbox_event
+        SET status = 2,
+            retry_count = #{retryCount},
+            next_retry_at = NULL,
+            last_attempt_at = now(),
+            last_error = #{lastError}
+        WHERE id = #{eventId}
+          AND status = 0
+    </update>
+
+</mapper>

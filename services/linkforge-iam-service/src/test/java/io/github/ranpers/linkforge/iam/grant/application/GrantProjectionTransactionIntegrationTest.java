@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.iam.grant.application;
 
+import io.github.ranpers.linkforge.iam.grant.application.port.out.GrantBatchProjectionStore;
 import io.github.ranpers.linkforge.iam.role.domain.RoleCode;
 import io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.MybatisUserRoleAssignment;
 import io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper;
@@ -18,6 +19,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -53,6 +55,12 @@ class GrantProjectionTransactionIntegrationTest {
 
     @Autowired
     private MybatisUserRoleAssignment roleAssignment;
+
+    @Autowired
+    private GrantBatchEngine grantBatchEngine;
+
+    @Autowired
+    private GrantBatchProjectionStore grantProjectionStore;
 
     @Autowired
     private UserRoleMapper userRoleMapper;
@@ -227,6 +235,151 @@ class GrantProjectionTransactionIntegrationTest {
         } finally {
             releaseFirst.countDown();
         }
+    }
+
+    @Test
+    void shouldProjectLargeRoleGrantAsOneDatabaseBatch() {
+        UUID userId = insertUser("bulk");
+        UUID roleId = roleId(RoleCode.ADMIN);
+        String marker = "bulk-" + UUID.randomUUID();
+        int domainCount = 1_200;
+        jdbc.update(
+                """
+                INSERT INTO t_domain (domain, name)
+                SELECT 'bulk-' || sequence_number || '-%s.example.test', ?
+                FROM generate_series(1, ?) AS sequence_number
+                """.formatted(marker),
+                marker,
+                domainCount
+        );
+        jdbc.update(
+                """
+                INSERT INTO t_role_domain (role_id, domain_id)
+                SELECT ?, id
+                FROM t_domain
+                WHERE name = ?
+                """,
+                roleId,
+                marker
+        );
+        int projectedDomainCount = count(
+                "SELECT count(*) FROM t_role_domain WHERE role_id = ?",
+                roleId
+        );
+        assertTrue(projectedDomainCount >= domainCount);
+
+        roleAssignment.assign(new UserId(userId), RoleCode.ADMIN);
+
+        assertEquals(projectedDomainCount, count(
+                "SELECT count(*) FROM t_user_domain_grant_state WHERE user_id = ? AND granted",
+                userId
+        ));
+        assertEquals(projectedDomainCount, count(
+                "SELECT count(*) FROM t_user_domain_grant_state WHERE user_id = ? AND revision = 1",
+                userId
+        ));
+        assertEquals(projectedDomainCount, count(
+                """
+                SELECT count(*)
+                FROM t_outbox_event
+                WHERE payload ->> 'userId' = ?
+                  AND payload ->> 'granted' = 'true'
+                  AND payload ->> 'revision' = '1'
+                """,
+                userId.toString()
+        ));
+    }
+
+    @Test
+    void shouldRevokeExplicitPairAndEmitOnlyItsNewTargetState() {
+        UUID userId = insertUser("revoke");
+        UUID domainId = insertDomain("revoke");
+        jdbc.update(
+                "INSERT INTO t_user_domain (user_id, domain_id) VALUES (?, ?)",
+                userId,
+                domainId
+        );
+        jdbc.update(
+                """
+                INSERT INTO t_user_domain_grant_state (user_id, domain_id, granted, revision)
+                VALUES (?, ?, TRUE, 1)
+                """,
+                userId,
+                domainId
+        );
+
+        GrantBatchResult result = grantBatchEngine.execute(new GrantChangePlan(
+                () -> {
+                },
+                () -> grantProjectionStore.stagePairs(List.of(new AffectedPair(userId, domainId))),
+                () -> jdbc.update(
+                        "DELETE FROM t_user_domain WHERE user_id = ? AND domain_id = ?",
+                        userId,
+                        domainId
+                )
+        ));
+
+        assertEquals(new GrantBatchResult(1, 1), result);
+        assertFalse(Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT granted FROM t_user_domain_grant_state WHERE user_id = ? AND domain_id = ?",
+                Boolean.class,
+                userId,
+                domainId
+        )));
+        assertEquals(2L, jdbc.queryForObject(
+                "SELECT revision FROM t_user_domain_grant_state WHERE user_id = ? AND domain_id = ?",
+                Long.class,
+                userId,
+                domainId
+        ));
+        assertEquals(1, count(
+                """
+                SELECT count(*)
+                FROM t_outbox_event
+                WHERE stream_key = ?
+                  AND payload ->> 'granted' = 'false'
+                  AND payload ->> 'revision' = '2'
+                """,
+                streamKey(userId, domainId)
+        ));
+    }
+
+    @Test
+    void shouldNotEmitWhenAnotherAuthorizationPathKeepsAccessGranted() {
+        UUID userId = insertUser("unchanged");
+        UUID domainId = insertDomain("unchanged");
+        UUID roleId = roleId(RoleCode.ADMIN);
+        jdbc.update(
+                "INSERT INTO t_user_domain (user_id, domain_id) VALUES (?, ?)",
+                userId,
+                domainId
+        );
+        jdbc.update(
+                """
+                INSERT INTO t_user_domain_grant_state (user_id, domain_id, granted, revision)
+                VALUES (?, ?, TRUE, 1)
+                """,
+                userId,
+                domainId
+        );
+        jdbc.update(
+                "INSERT INTO t_role_domain (role_id, domain_id) VALUES (?, ?)",
+                roleId,
+                domainId
+        );
+
+        roleAssignment.assign(new UserId(userId), RoleCode.ADMIN);
+
+        assertEquals(1L, jdbc.queryForObject(
+                "SELECT revision FROM t_user_domain_grant_state WHERE user_id = ? AND domain_id = ?",
+                Long.class,
+                userId,
+                domainId
+        ));
+        assertEquals(0, count(
+                "SELECT count(*) FROM t_outbox_event WHERE stream_key = ?",
+                streamKey(userId, domainId)
+        ));
     }
 
     private UUID insertUser(String marker) {
