@@ -15,6 +15,27 @@ spring:
     # 默认就是 classpath:db/migration,这里显式写出,便于后续按服务/集群区分
     locations: classpath:db/migration
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${AUTHORIZATION_CONSUMER_GROUP_ID:linkforge-link-authorization-v1}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        isolation.level: read_committed
+    producer:
+      # 仅供不可恢复消息投递到 DLT；正常授权事件由 IAM 生产。
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+    listener:
+      # 数据库事务提交后监听方法才返回；崩溃导致的重复由 Inbox 消化。
+      ack-mode: record
+
 management:
   endpoints:
     web:
@@ -22,3 +43,19 @@ management:
         include:
           - health
           - info
+
+# 显式约定 XML 与 UUID TypeHandler，和 IAM 服务保持一致。
+mybatis-flex:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-handlers-package: io.github.ranpers.linkforge.link.infrastructure.persistence.mybatis
+
+linkforge:
+  authorization-consumer:
+    # Kafka 是可选 compose profile；启用消费者时同时启动 Kafka。
+    enabled: ${AUTHORIZATION_CONSUMER_ENABLED:false}
+    topic: ${AUTHORIZATION_EVENT_TOPIC:linkforge.iam.authorization.v1}
+    group-id: ${AUTHORIZATION_CONSUMER_GROUP_ID:linkforge-link-authorization-v1}
+    concurrency: ${AUTHORIZATION_CONSUMER_CONCURRENCY:1}
+    max-attempts: ${AUTHORIZATION_CONSUMER_MAX_ATTEMPTS:5}
+    retry-backoff: ${AUTHORIZATION_CONSUMER_RETRY_BACKOFF:1s}
+    dlt-suffix: ${AUTHORIZATION_CONSUMER_DLT_SUFFIX:.DLT}

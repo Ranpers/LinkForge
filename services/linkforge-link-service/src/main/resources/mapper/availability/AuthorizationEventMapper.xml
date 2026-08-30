@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.availability.adapter.out.persistence.AuthorizationEventMapper">
+
+    <insert id="insertInbox">
+        INSERT INTO t_inbox_event (event_id, event_type, stream_key)
+        VALUES (#{eventId}, #{eventType}, #{streamKey})
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <!-- 空流先落 checkpoint=0，否则随后 FOR UPDATE 锁不住不存在的状态流。 -->
+    <insert id="insertCheckpointIfAbsent">
+        INSERT INTO t_stream_checkpoint (stream_key, last_applied_revision)
+        VALUES (#{streamKey}, 0)
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <select id="lockCheckpoint" resultType="long">
+        SELECT last_applied_revision
+        FROM t_stream_checkpoint
+        WHERE stream_key = #{streamKey}
+        FOR UPDATE
+    </select>
+
+    <update id="advanceCheckpoint">
+        UPDATE t_stream_checkpoint
+        SET last_applied_revision = #{revision},
+            updated_at = now()
+        WHERE stream_key = #{streamKey}
+          AND last_applied_revision &lt; #{revision}
+    </update>
+
+    <!-- 只写真正需要翻转位的行，避免重复状态造成无意义的行版本和 WAL。 -->
+    <update id="applyDomainAvailability">
+        UPDATE t_link
+        <choose>
+            <when test="enabled">
+                SET disabled_reason = disabled_reason &amp; ~CAST(2 AS smallint),
+                    updated_at = now()
+                WHERE domain_id = #{domainId}
+                  AND (disabled_reason &amp; CAST(2 AS smallint)) != 0
+            </when>
+            <otherwise>
+                SET disabled_reason = disabled_reason | CAST(2 AS smallint),
+                    updated_at = now()
+                WHERE domain_id = #{domainId}
+                  AND (disabled_reason &amp; CAST(2 AS smallint)) = 0
+            </otherwise>
+        </choose>
+    </update>
+
+    <update id="applyUserAvailability">
+        UPDATE t_link
+        <choose>
+            <when test="enabled">
+                SET disabled_reason = disabled_reason &amp; ~CAST(8 AS smallint),
+                    updated_at = now()
+                WHERE user_id = #{userId}
+                  AND (disabled_reason &amp; CAST(8 AS smallint)) != 0
+            </when>
+            <otherwise>
+                SET disabled_reason = disabled_reason | CAST(8 AS smallint),
+                    updated_at = now()
+                WHERE user_id = #{userId}
+                  AND (disabled_reason &amp; CAST(8 AS smallint)) = 0
+            </otherwise>
+        </choose>
+    </update>
+
+    <update id="applyUserDomainGrant">
+        UPDATE t_link
+        <choose>
+            <when test="granted">
+                SET disabled_reason = disabled_reason &amp; ~CAST(4 AS smallint),
+                    updated_at = now()
+                WHERE user_id = #{userId}
+                  AND domain_id = #{domainId}
+                  AND (disabled_reason &amp; CAST(4 AS smallint)) != 0
+            </when>
+            <otherwise>
+                SET disabled_reason = disabled_reason | CAST(4 AS smallint),
+                    updated_at = now()
+                WHERE user_id = #{userId}
+                  AND domain_id = #{domainId}
+                  AND (disabled_reason &amp; CAST(4 AS smallint)) = 0
+            </otherwise>
+        </choose>
+    </update>
+
+</mapper>
