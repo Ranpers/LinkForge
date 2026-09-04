@@ -93,8 +93,10 @@ LinkForge 目前处于早期开发阶段，主要能力仍在逐步完善中。�
 
 欢迎参与项目建设。提交改动前，请尽量保持变更范围单一、说明清晰，并确保相关验证可以通过。
 
-## 版权
+## 开源许可
 
-Copyright © 2026 Ranpers. All rights reserved.
+本项目基于 Apache License 2.0 开源。你可以在遵守许可条款的前提下使用、修改和分发本项目。
 
-详细说明见 [COPYRIGHT](COPYRIGHT)。
+Copyright © 2026 Ranpers.
+
+完整许可条款见 [LICENSE](LICENSE)。
