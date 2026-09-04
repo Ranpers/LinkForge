@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.security.adapter.out.persistence.UserSecurityStatusMapper">
+
+    <select id="change" resultType="integer">
+        WITH actor_allowed AS MATERIALIZED (
+            SELECT EXISTS(
+                SELECT 1
+                FROM t_user actor
+                         JOIN t_user_role user_role ON user_role.user_id = actor.id
+                         JOIN t_role_permission role_permission
+                              ON role_permission.role_id = user_role.role_id
+                         JOIN t_permission permission
+                              ON permission.id = role_permission.permission_id
+                WHERE actor.id = #{actorUserId}
+                  AND actor.status = 1
+                  AND actor.deleted_at IS NULL
+                  AND permission.code = 'security:manage'
+            ) AS allowed
+        ),
+        target AS MATERIALIZED (
+            SELECT status
+            FROM t_user
+            WHERE id = #{targetUserId}
+              AND deleted_at IS NULL
+        ),
+        changed AS (
+            UPDATE t_user
+            SET status = CASE WHEN #{suspended} THEN 2 ELSE 1 END,
+                updated_at = now()
+            WHERE id = #{targetUserId}
+              AND deleted_at IS NULL
+              AND (SELECT allowed FROM actor_allowed)
+              AND (
+                  (#{suspended} AND status = 1)
+                  OR (NOT #{suspended} AND status = 2)
+              )
+            RETURNING id
+        )
+        SELECT CASE
+                   WHEN NOT (SELECT allowed FROM actor_allowed) THEN 0
+                   WHEN NOT EXISTS(SELECT 1 FROM target) THEN 1
+                   WHEN EXISTS(SELECT 1 FROM changed) THEN 4
+                   WHEN (SELECT status FROM target) = 0 THEN 2
+                   ELSE 3
+               END
+    </select>
+
+</mapper>

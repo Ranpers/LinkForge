@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.grant.application;
 
-import io.github.ranpers.linkforge.iam.grant.application.port.out.AuthorizationEventPublisher;
+import io.github.ranpers.linkforge.iam.grant.application.port.out.LinkControlEventPublisher;
 import io.github.ranpers.linkforge.iam.grant.application.port.out.OutboxDispatchStore;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 class OutboxDispatchServiceTest {
 
     private final OutboxDispatchStore store = mock(OutboxDispatchStore.class);
-    private final AuthorizationEventPublisher publisher = mock(AuthorizationEventPublisher.class);
+    private final LinkControlEventPublisher publisher = mock(LinkControlEventPublisher.class);
     private final OutboxDispatchService service = new OutboxDispatchService(store, publisher);
     private final OutboxDispatchSettings settings = new OutboxDispatchSettings(
             10,
@@ -113,8 +113,8 @@ class OutboxDispatchServiceTest {
         UUID id = UUID.randomUUID();
         return new PendingOutboxEvent(
                 id,
-                "UserDomainGrantChanged",
-                "USER_DOMAIN:user:domain",
+                "DomainAvailabilityChanged",
+                "DOMAIN:domain",
                 "domain",
                 "{\"eventId\":\"" + id + "\"}",
                 retryCount

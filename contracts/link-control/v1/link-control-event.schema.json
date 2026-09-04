@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://linkforge.dev/contracts/link-control/v1/link-control-event.schema.json",
+  "title": "LinkForge Link Control Event",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/domainAvailabilityChanged"
+    },
+    {
+      "$ref": "#/$defs/userLinkSecurityRestrictionsChanged"
+    }
+  ],
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": [
+        "eventId",
+        "eventType",
+        "schemaVersion",
+        "streamKey",
+        "revision",
+        "occurredAt",
+        "payload"
+      ],
+      "properties": {
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "eventType": {
+          "type": "string"
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "streamKey": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "occurredAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "traceId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 64
+        }
+      }
+    },
+    "domainAvailabilityChanged": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/envelope"
+        },
+        {
+          "properties": {
+            "eventType": {
+              "const": "DomainAvailabilityChanged"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "domainId",
+                "host",
+                "enabled"
+              ],
+              "properties": {
+                "domainId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "host": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 253
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "securityRestriction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "restrictionId",
+        "mode",
+        "reasonCode",
+        "createdAt"
+      ],
+      "properties": {
+        "restrictionId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "mode": {
+          "enum": [
+            "ALL",
+            "CREATED_DURING"
+          ]
+        },
+        "rangeStart": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "rangeEnd": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "reasonCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "userLinkSecurityRestrictionsChanged": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/envelope"
+        },
+        {
+          "properties": {
+            "eventType": {
+              "const": "UserLinkSecurityRestrictionsChanged"
+            },
+            "payload": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "userId",
+                "restrictions"
+              ],
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "restrictions": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/securityRestriction"
+                  },
+                  "uniqueItems": true
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

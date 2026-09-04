@@ -2,8 +2,9 @@ package io.github.ranpers.linkforge.iam.user.domain;
 
 @SuppressWarnings("unused")
 public enum UserStatus {
-    DISABLED(0),
-    ACTIVE(1);
+    DEACTIVATED(0),
+    ACTIVE(1),
+    SECURITY_SUSPENDED(2);
 
     private final int databaseValue;
 
@@ -17,8 +18,9 @@ public enum UserStatus {
 
     public static UserStatus fromDatabaseValue(int value) {
         return switch (value) {
-            case 0 -> DISABLED;
+            case 0 -> DEACTIVATED;
             case 1 -> ACTIVE;
+            case 2 -> SECURITY_SUSPENDED;
             default -> throw new IllegalArgumentException("未知用户状态: " + value);
         };
     }

@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.grant.application;
 
-import io.github.ranpers.linkforge.iam.grant.application.port.out.AuthorizationEventPublisher;
+import io.github.ranpers.linkforge.iam.grant.application.port.out.LinkControlEventPublisher;
 import io.github.ranpers.linkforge.iam.grant.application.port.out.OutboxDispatchStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,9 +25,9 @@ public class OutboxDispatchService {
     private static final int MAX_ERROR_LENGTH = 2000;
 
     private final OutboxDispatchStore store;
-    private final AuthorizationEventPublisher publisher;
+    private final LinkControlEventPublisher publisher;
 
-    public OutboxDispatchService(OutboxDispatchStore store, AuthorizationEventPublisher publisher) {
+    public OutboxDispatchService(OutboxDispatchStore store, LinkControlEventPublisher publisher) {
         this.store = store;
         this.publisher = publisher;
     }

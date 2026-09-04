@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.management.adapter.out.persistence.LinkManagementMapper">
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.link.management.adapter.out.persistence.LinkManagementRow">
+        SELECT id AS linkId,
+               domain_id AS domainId,
+               created_by_user_id AS createdByUserId
+        FROM t_link
+        WHERE id = #{linkId}
+          AND deleted_at IS NULL
+    </select>
+
+    <update id="updateTarget">
+        UPDATE t_link
+        SET full_url = #{fullUrl},
+            revision = revision + 1,
+            updated_at = now()
+        WHERE id = #{linkId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="changeAvailability" resultType="integer">
+        WITH target AS MATERIALIZED (
+            SELECT status, disabled_reason_code
+            FROM t_link
+            WHERE id = #{linkId}
+              AND deleted_at IS NULL
+        ),
+        changed AS (
+            UPDATE t_link
+            SET status = CASE WHEN #{enabled} THEN 'ACTIVE' ELSE 'DISABLED' END,
+                disabled_reason_code = CASE WHEN #{enabled} THEN NULL ELSE 'MANUAL' END,
+                revision = revision + 1,
+                updated_at = now()
+            WHERE id = #{linkId}
+              AND deleted_at IS NULL
+              AND (
+                  (#{enabled} AND status = 'DISABLED' AND disabled_reason_code = 'MANUAL')
+                  OR (NOT #{enabled} AND status = 'ACTIVE')
+              )
+            RETURNING id
+        )
+        SELECT CASE
+                   WHEN NOT EXISTS(SELECT 1 FROM target) THEN 0
+                   WHEN EXISTS(SELECT 1 FROM changed) THEN 3
+                   WHEN #{enabled}
+                        AND (SELECT status FROM target) = 'DISABLED'
+                        AND (SELECT disabled_reason_code FROM target) != 'MANUAL' THEN 1
+                   ELSE 2
+               END
+    </select>
+
+    <update id="softDelete">
+        UPDATE t_link
+        SET deleted_at = now(),
+            revision = revision + 1,
+            updated_at = now()
+        WHERE id = #{linkId}
+          AND deleted_at IS NULL
+    </update>
+
+</mapper>

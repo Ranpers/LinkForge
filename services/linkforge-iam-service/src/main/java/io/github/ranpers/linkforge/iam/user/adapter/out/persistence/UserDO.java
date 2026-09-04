@@ -27,7 +27,7 @@ public class UserDO {
 
     private String realName;
 
-    /** 1=正常 0=禁用 */
+    /** 0=停用 1=正常 2=安全暂停 */
     private Integer status;
 
     /** 软删:NULL=存活 */

@@ -9,7 +9,7 @@ import java.time.Duration;
 public class OutboxDispatchProperties {
 
     private boolean enabled;
-    private String topic = "linkforge.iam.authorization.v1";
+    private String topic = "linkforge.iam.link-control.v1";
     private Duration pollInterval = Duration.ofSeconds(1);
     private int batchSize = 50;
     private int maxAttempts = 8;

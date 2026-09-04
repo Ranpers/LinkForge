@@ -48,10 +48,12 @@ class HexagonalArchitectureTest {
     private void assertNoForbiddenImports(String layer, List<String> forbiddenImports)
             throws IOException {
         List<String> violations = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(findIamSourceRoot())) {
+        Path sourceRoot = findIamSourceRoot();
+        try (Stream<Path> paths = Files.walk(sourceRoot)) {
             for (Path path : paths.filter(file -> file.toString().endsWith(".java")).toList()) {
                 String normalizedPath = path.toString().replace('\\', '/');
-                if (!normalizedPath.contains(layer)) {
+                String relativePath = sourceRoot.relativize(path).toString().replace('\\', '/');
+                if (!isLayer(relativePath, layer)) {
                     continue;
                 }
                 for (String line : Files.readAllLines(path)) {
@@ -65,6 +67,17 @@ class HexagonalArchitectureTest {
         }
 
         assertTrue(violations.isEmpty(), () -> "六边形依赖方向违规:\n" + String.join("\n", violations));
+    }
+
+    private static boolean isLayer(String relativePath, String layer) {
+        String layerName = layer.replace("/", "");
+        String[] segments = relativePath.split("/");
+        for (int index = 1; index < segments.length - 1; index++) {
+            if (segments[index].equals(layerName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Path findIamSourceRoot() {

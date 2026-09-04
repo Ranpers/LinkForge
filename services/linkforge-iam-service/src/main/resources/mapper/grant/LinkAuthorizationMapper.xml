@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.LinkAuthorizationMapper">
+
+    <sql id="domainGranted">
+        EXISTS(
+            SELECT 1
+            FROM t_user_role user_role
+                     JOIN t_role_domain role_domain
+                          ON role_domain.role_id = user_role.role_id
+            WHERE user_role.user_id = #{userId}
+              AND role_domain.domain_id = #{domainId}
+        ) OR EXISTS(
+            SELECT 1
+            FROM t_user_role user_role
+                     JOIN t_role_domain_group role_domain_group
+                          ON role_domain_group.role_id = user_role.role_id
+                     JOIN t_domain_group_domain dgd
+                          ON dgd.domain_group_id = role_domain_group.domain_group_id
+            WHERE user_role.user_id = #{userId}
+              AND dgd.domain_id = #{domainId}
+        ) OR EXISTS(
+            SELECT 1
+            FROM t_user_domain user_domain
+            WHERE user_domain.user_id = #{userId}
+              AND user_domain.domain_id = #{domainId}
+        ) OR EXISTS(
+            SELECT 1
+            FROM t_user_domain_group user_domain_group
+                     JOIN t_domain_group_domain dgd
+                          ON dgd.domain_group_id = user_domain_group.domain_group_id
+            WHERE user_domain_group.user_id = #{userId}
+              AND dgd.domain_id = #{domainId}
+        )
+    </sql>
+
+    <!-- A single statement snapshot evaluates all current authorization facts. -->
+    <select id="findSnapshot"
+            resultType="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.LinkCreationAuthorizationRow">
+        WITH authorization_facts AS MATERIALIZED (
+            SELECT EXISTS(
+                       SELECT 1
+                       FROM t_user user_state
+                       WHERE user_state.id = #{userId}
+                         AND user_state.status = 1
+                         AND user_state.deleted_at IS NULL
+                   ) AS user_enabled,
+                   EXISTS(
+                       SELECT 1
+                       FROM t_user_role user_role
+                                JOIN t_role_permission role_permission
+                                     ON role_permission.role_id = user_role.role_id
+                                JOIN t_permission permission
+                                     ON permission.id = role_permission.permission_id
+                       WHERE user_role.user_id = #{userId}
+                         AND permission.code = 'link:create'
+                   ) AS action_allowed,
+                   EXISTS(
+                       SELECT 1
+                       FROM t_domain domain_state
+                       WHERE domain_state.id = #{domainId}
+                         AND domain_state.status = 1
+                   ) AS domain_enabled,
+                   (<include refid="domainGranted"/>) AS domain_granted
+        )
+        SELECT user_enabled,
+               action_allowed,
+               domain_enabled,
+               domain_granted
+        FROM authorization_facts
+    </select>
+
+    <select id="findManagementSnapshot"
+            resultType="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.LinkManagementAuthorizationRow">
+        WITH management_facts AS MATERIALIZED (
+            SELECT EXISTS(
+                       SELECT 1
+                       FROM t_user actor
+                       WHERE actor.id = #{userId}
+                         AND actor.status = 1
+                         AND actor.deleted_at IS NULL
+                   ) AS user_enabled,
+                   EXISTS(
+                       SELECT 1
+                       FROM t_domain domain_state
+                       WHERE domain_state.id = #{domainId}
+                         AND domain_state.status = 1
+                   ) AS domain_enabled,
+                   EXISTS(
+                       SELECT 1
+                       FROM t_user_role user_role
+                                JOIN t_role_permission role_permission
+                                     ON role_permission.role_id = user_role.role_id
+                                JOIN t_permission permission
+                                     ON permission.id = role_permission.permission_id
+                       WHERE user_role.user_id = #{userId}
+                         AND permission.code = 'link:manage:any'
+                   ) AS global_management_allowed,
+                   (
+                       #{userId} = #{createdByUserId}
+                       AND EXISTS(
+                           SELECT 1
+                           FROM t_user_role user_role
+                                    JOIN t_role_permission role_permission
+                                         ON role_permission.role_id = user_role.role_id
+                                    JOIN t_permission permission
+                                         ON permission.id = role_permission.permission_id
+                           WHERE user_role.user_id = #{userId}
+                             AND permission.code = #{actionPermission}
+                       )
+                       AND (<include refid="domainGranted"/>)
+                   ) AS own_management_allowed
+        )
+        SELECT user_enabled,
+               domain_enabled,
+               global_management_allowed,
+               own_management_allowed
+        FROM management_facts
+    </select>
+
+</mapper>

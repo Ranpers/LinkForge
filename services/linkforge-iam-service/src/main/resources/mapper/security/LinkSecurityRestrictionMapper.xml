@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.security.adapter.out.persistence.LinkSecurityRestrictionMapper">
+
+    <select id="actorAllowed" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM t_user actor
+                     JOIN t_user_role user_role ON user_role.user_id = actor.id
+                     JOIN t_role_permission role_permission
+                          ON role_permission.role_id = user_role.role_id
+                     JOIN t_permission permission
+                          ON permission.id = role_permission.permission_id
+            WHERE actor.id = #{actorUserId}
+              AND actor.status = 1
+              AND actor.deleted_at IS NULL
+              AND permission.code = 'security:manage'
+        )
+    </select>
+
+    <!-- Serializes every full-snapshot mutation for one target user. -->
+    <select id="lockTargetUser" resultType="long">
+        SELECT link_security_revision
+        FROM t_user
+        WHERE id = #{targetUserId}
+        FOR UPDATE
+    </select>
+
+    <select id="insertRestriction" resultType="java.util.UUID">
+        INSERT INTO t_user_link_security_restriction
+            (id, user_id, mode, range_start, range_end, reason_code)
+        VALUES (
+            uuidv7(),
+            #{targetUserId},
+            #{mode},
+            #{rangeStart},
+            #{rangeEnd},
+            #{reasonCode}
+        )
+        RETURNING id
+    </select>
+
+    <select id="restrictionActive" resultType="boolean">
+        SELECT active
+        FROM t_user_link_security_restriction
+        WHERE id = #{restrictionId}
+          AND user_id = #{targetUserId}
+    </select>
+
+    <update id="revokeRestriction">
+        UPDATE t_user_link_security_restriction
+        SET active = FALSE,
+            revoked_at = now()
+        WHERE id = #{restrictionId}
+          AND user_id = #{targetUserId}
+          AND active
+    </update>
+
+    <select id="incrementRevision" resultType="long">
+        UPDATE t_user
+        SET link_security_revision = link_security_revision + 1,
+            updated_at = now()
+        WHERE id = #{targetUserId}
+        RETURNING link_security_revision
+    </select>
+
+    <insert id="appendSnapshotEvent">
+        INSERT INTO t_outbox_event
+            (id, event_type, schema_version, stream_key, partition_key, trace_id, payload)
+        SELECT event_id,
+               'UserLinkSecurityRestrictionsChanged',
+               1,
+               'USER_LINK_SECURITY:' || #{targetUserId}::text,
+               #{targetUserId}::text,
+               #{traceId},
+               jsonb_build_object(
+                   'eventId', event_id::text,
+                   'eventType', 'UserLinkSecurityRestrictionsChanged',
+                   'schemaVersion', 1,
+                   'streamKey', 'USER_LINK_SECURITY:' || #{targetUserId}::text,
+                   'revision', #{revision},
+                   'occurredAt', occurred_at,
+                   'traceId', #{traceId},
+                   'payload', jsonb_build_object(
+                       'userId', #{targetUserId}::text,
+                       'restrictions', (
+                           SELECT COALESCE(
+                               jsonb_agg(
+                                   jsonb_build_object(
+                                       'restrictionId', restriction.id::text,
+                                       'mode', restriction.mode,
+                                       'rangeStart', restriction.range_start,
+                                       'rangeEnd', restriction.range_end,
+                                       'reasonCode', restriction.reason_code,
+                                       'createdAt', restriction.created_at
+                                   )
+                                   ORDER BY restriction.created_at, restriction.id
+                               ),
+                               '[]'::jsonb
+                           )
+                           FROM t_user_link_security_restriction restriction
+                           WHERE restriction.user_id = #{targetUserId}
+                             AND restriction.active
+                       )
+                   )
+               )
+        FROM (SELECT uuidv7() AS event_id, now() AS occurred_at) generated
+    </insert>
+
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.LinkResolutionMapper">
+
+    <sql id="linkRuntimeColumns">
+        SELECT link.id AS linkId,
+               link.domain_id AS domainId,
+               link.created_by_user_id AS createdByUserId,
+               domain.host,
+               link.link_code AS linkCode,
+               link.full_url AS targetUrl,
+               link.status AS linkStatus,
+               link.deleted_at AS deletedAt,
+               link.expires_at AS expiresAt,
+               link.created_at AS createdAt,
+               link.revision
+        FROM t_link link
+                 JOIN t_domain_state domain ON domain.domain_id = link.domain_id
+    </sql>
+
+    <select id="findLinkByRoute"
+            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.LinkResolutionRow">
+        <include refid="linkRuntimeColumns"/>
+        WHERE domain.host = #{host}
+          AND link.link_code = #{linkCode}
+    </select>
+
+    <select id="findLinkById"
+            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.LinkResolutionRow">
+        <include refid="linkRuntimeColumns"/>
+        WHERE link.id = #{linkId}
+    </select>
+
+    <select id="findDomain"
+            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.DomainRuntimeStateRow">
+        SELECT domain_id AS domainId,
+               enabled,
+               revision
+        FROM t_domain_state
+        WHERE domain_id = #{domainId}
+    </select>
+
+    <select id="findRestrictionRevision" resultType="long">
+        SELECT last_applied_revision
+        FROM t_stream_checkpoint
+        WHERE stream_key = #{streamKey}
+    </select>
+
+    <select id="findRestrictions"
+            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.UserSecurityRestrictionRow">
+        SELECT restriction_id AS restrictionId,
+               mode,
+               range_start AS rangeStart,
+               range_end AS rangeEnd,
+               reason_code AS reasonCode,
+               created_at AS createdAt
+        FROM t_user_link_security_restriction
+        WHERE user_id = #{userId}
+        ORDER BY created_at, restriction_id
+    </select>
+
+</mapper>

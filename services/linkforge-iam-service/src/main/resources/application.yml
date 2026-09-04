@@ -33,6 +33,18 @@ spring:
         issuer: http://127.0.0.1:9000
 
         client:
+          link-service:
+            registration:
+              client-id: linkforge-link-service
+              # IAM 保存编码后的密钥；Link 侧持有对应原文。生产环境应使用 {bcrypt} 前缀。
+              client-secret: ${IAM_LINK_CLIENT_SECRET_HASH}
+              client-authentication-methods:
+                - client_secret_basic
+              authorization-grant-types:
+                - client_credentials
+              scopes:
+                - internal.authorization.read
+
           smoke-test:
             registration:
               client-id: linkforge-smoke
@@ -76,7 +88,7 @@ linkforge:
   outbox:
     # Kafka 是可选 compose profile;默认关闭,避免未启动 Kafka 时误将事件重试至 parked。
     enabled: ${OUTBOX_ENABLED:false}
-    topic: ${OUTBOX_TOPIC:linkforge.iam.authorization.v1}
+    topic: ${OUTBOX_TOPIC:linkforge.iam.link-control.v1}
     poll-interval: ${OUTBOX_POLL_INTERVAL:1s}
     batch-size: ${OUTBOX_BATCH_SIZE:50}
     max-attempts: ${OUTBOX_MAX_ATTEMPTS:8}

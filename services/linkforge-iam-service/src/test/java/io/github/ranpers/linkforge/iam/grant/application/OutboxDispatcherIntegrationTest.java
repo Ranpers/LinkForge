@@ -38,11 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(properties = {
         "linkforge.outbox.enabled=false",
-        "spring.security.oauth2.authorizationserver.client.smoke-test.registration.client-secret={noop}integration-secret"
+        "spring.security.oauth2.authorizationserver.client.smoke-test.registration.client-secret={noop}integration-secret",
+        "spring.security.oauth2.authorizationserver.client.link-service.registration.client-secret={noop}integration-link-secret"
 })
 class OutboxDispatcherIntegrationTest {
 
-    private static final String TOPIC = "linkforge.iam.authorization.v1";
+    private static final String TOPIC = "linkforge.iam.link-control.v1";
 
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
@@ -147,17 +148,19 @@ class OutboxDispatcherIntegrationTest {
         assertEquals("retry limit reached", parkedRow.get("last_error"));
     }
 
-    private UUID insertPendingEvent(UUID userId, UUID domainId) {
+    private UUID insertPendingEvent(UUID ignoredUserId, UUID domainId) {
         UUID eventId = UUID.randomUUID();
-        String streamKey = "USER_DOMAIN:" + userId + ":" + domainId;
+        String streamKey = "DOMAIN:" + domainId;
         String payload = """
-                {"eventId":"%s","eventType":"UserDomainGrantChanged","streamKey":"%s",\
-                "revision":1,"occurredAt":"%s","userId":"%s","domainId":"%s","granted":false}
-                """.formatted(eventId, streamKey, OffsetDateTime.now(), userId, domainId);
+                {"eventId": "%s", "eventType": "DomainAvailabilityChanged", "schemaVersion": 1,\
+                "streamKey": "%s", "revision": 1, "occurredAt": "%s",\
+                "payload": {"domainId": "%s", "host": "example.test", "enabled": false}}
+                """.formatted(eventId, streamKey, OffsetDateTime.now(), domainId);
         jdbc.update(
                 """
-                INSERT INTO t_outbox_event (id, event_type, stream_key, partition_key, payload)
-                VALUES (?, 'UserDomainGrantChanged', ?, ?, CAST(? AS jsonb))
+                INSERT INTO t_outbox_event
+                    (id, event_type, schema_version, stream_key, partition_key, payload)
+                VALUES (?, 'DomainAvailabilityChanged', 1, ?, ?, CAST(? AS jsonb))
                 """,
                 eventId,
                 streamKey,

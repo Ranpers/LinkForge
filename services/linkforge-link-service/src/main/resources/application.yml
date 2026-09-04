@@ -11,6 +11,13 @@ spring:
     password: ${POSTGRES_PASSWORD:change-me-pg}
     # driver-class-name 不用写:Boot 按 jdbc:postgresql:// 自动识别 org.postgresql.Driver
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:1s}
+
   flyway:
     # 默认就是 classpath:db/migration,这里显式写出,便于后续按服务/集群区分
     locations: classpath:db/migration
@@ -18,7 +25,7 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: ${AUTHORIZATION_CONSUMER_GROUP_ID:linkforge-link-authorization-v1}
+      group-id: ${LINK_CONTROL_CONSUMER_GROUP_ID:linkforge-link-control-v1}
       enable-auto-commit: false
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -26,7 +33,7 @@ spring:
       properties:
         isolation.level: read_committed
     producer:
-      # 仅供不可恢复消息投递到 DLT；正常授权事件由 IAM 生产。
+      # 仅供不可恢复消息投递到 DLT；正常控制事件由 IAM 生产。
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       properties:
@@ -35,6 +42,25 @@ spring:
     listener:
       # 数据库事务提交后监听方法才返回；崩溃导致的重复由 Inbox 消化。
       ack-mode: record
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://127.0.0.1:9000/oauth2/jwks}
+      client:
+        provider:
+          iam:
+            token-uri: ${IAM_TOKEN_URI:http://127.0.0.1:9000/oauth2/token}
+        registration:
+          iam-internal:
+            provider: iam
+            client-id: ${IAM_LINK_CLIENT_ID:linkforge-link-service}
+            client-secret: ${IAM_LINK_CLIENT_SECRET}
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: client_credentials
+            scope:
+              - internal.authorization.read
 
 management:
   endpoints:
@@ -50,12 +76,20 @@ mybatis-flex:
   type-handlers-package: io.github.ranpers.linkforge.link.infrastructure.persistence.mybatis
 
 linkforge:
-  authorization-consumer:
-    # Kafka 是可选 compose profile；启用消费者时同时启动 Kafka。
-    enabled: ${AUTHORIZATION_CONSUMER_ENABLED:false}
-    topic: ${AUTHORIZATION_EVENT_TOPIC:linkforge.iam.authorization.v1}
-    group-id: ${AUTHORIZATION_CONSUMER_GROUP_ID:linkforge-link-authorization-v1}
-    concurrency: ${AUTHORIZATION_CONSUMER_CONCURRENCY:1}
-    max-attempts: ${AUTHORIZATION_CONSUMER_MAX_ATTEMPTS:5}
-    retry-backoff: ${AUTHORIZATION_CONSUMER_RETRY_BACKOFF:1s}
-    dlt-suffix: ${AUTHORIZATION_CONSUMER_DLT_SUFFIX:.DLT}
+  iam-client:
+    base-url: ${IAM_BASE_URL:http://127.0.0.1:9000}
+    registration-id: iam-internal
+    connect-timeout: ${IAM_CONNECT_TIMEOUT:2s}
+    read-timeout: ${IAM_READ_TIMEOUT:3s}
+  link-control-consumer:
+    enabled: ${LINK_CONTROL_CONSUMER_ENABLED:false}
+    topic: ${LINK_CONTROL_EVENT_TOPIC:linkforge.iam.link-control.v1}
+    group-id: ${LINK_CONTROL_CONSUMER_GROUP_ID:linkforge-link-control-v1}
+    concurrency: ${LINK_CONTROL_CONSUMER_CONCURRENCY:1}
+    max-attempts: ${LINK_CONTROL_CONSUMER_MAX_ATTEMPTS:5}
+    retry-backoff: ${LINK_CONTROL_CONSUMER_RETRY_BACKOFF:1s}
+    dlt-suffix: ${LINK_CONTROL_CONSUMER_DLT_SUFFIX:.DLT}
+  resolution-cache:
+    link-ttl: ${LINK_CACHE_TTL:10m}
+    control-ttl: ${LINK_CONTROL_CACHE_TTL:30s}
+    jitter: ${LINK_CACHE_JITTER:5s}

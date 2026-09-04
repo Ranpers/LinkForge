@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.creation.adapter.out.persistence.ShortLinkMapper">
+
+    <select id="findByIdempotencyKey"
+            resultType="io.github.ranpers.linkforge.link.creation.adapter.out.persistence.ShortLinkRow">
+        SELECT id,
+               created_by_user_id AS createdByUserId,
+               group_id AS groupId,
+               name,
+               link_code AS linkCode,
+               full_url AS fullUrl,
+               sort_order AS sortOrder,
+               domain_id AS domainId,
+               expires_at AS expiresAt,
+               idempotency_key AS idempotencyKey,
+               request_fingerprint AS requestFingerprint,
+               created_at AS createdAt
+        FROM t_link
+        WHERE created_by_user_id = #{userId}
+          AND idempotency_key = #{idempotencyKey}
+    </select>
+
+    <select id="groupBelongsToUser" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM t_group
+            WHERE id = #{groupId}
+              AND user_id = #{userId}
+              AND deleted_at IS NULL
+        )
+    </select>
+
+    <insert id="insertIfIdempotencyAbsent">
+        INSERT INTO t_link
+            (id, created_by_user_id, group_id, name, link_code, full_url,
+             sort_order, domain_id, expires_at, idempotency_key,
+             request_fingerprint, created_at, updated_at)
+        VALUES
+            (#{link.id}, #{link.createdByUserId}, #{link.groupId}, #{link.name},
+             #{link.linkCode}, #{link.fullUrl}, #{link.sortOrder}, #{link.domainId},
+             #{link.expiresAt}, #{link.idempotencyKey}, #{link.requestFingerprint},
+             #{link.createdAt}, #{link.createdAt})
+        ON CONFLICT (created_by_user_id, idempotency_key)
+            WHERE idempotency_key IS NOT NULL
+            DO NOTHING
+    </insert>
+
+</mapper>

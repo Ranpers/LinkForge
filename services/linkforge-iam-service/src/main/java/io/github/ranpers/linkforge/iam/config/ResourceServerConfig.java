@@ -17,12 +17,14 @@ public class ResourceServerConfig {
     @Order(2)
     SecurityFilterChain apiChain(HttpSecurity httpSecurity) {
         httpSecurity
-                .securityMatcher("/api/**")
+                .securityMatcher("/api/**", "/internal/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/user/register").permitAll()
+                        .requestMatchers("/internal/**")
+                        .hasAuthority("SCOPE_internal.authorization.read")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(Customizer.withDefaults()));

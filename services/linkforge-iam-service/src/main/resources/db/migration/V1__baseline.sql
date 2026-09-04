@@ -1,47 +1,39 @@
--- =============================================================
--- V1__baseline.sql — IAM 基线 schema
---
--- 设计约定:
---   1) 主键统一 uuid7(PG 18 内置),即「内部关联键 = 对外 public id」,
---      不设双 id(自增内部 id + 外露 uuid 两套)
---   2) 关联表用复合主键(两外键),不设代理键
---   3) 权限码 = 资源:动作(link:create);OAuth2 scope 用 . 分隔(link.write),两者分层
---   4) 软删除统一 deleted_at(NULL=存活);禁用/失效另用 status 或 disabled_reason 表达
--- =============================================================
-
--- ---------- 用户 ----------
+-- LinkForge IAM prototype baseline.
+-- The prototype database is disposable: this file describes the final schema directly.
 
 CREATE TABLE t_user
 (
-    id         uuid PRIMARY KEY      DEFAULT uuidv7(),
-    username   varchar(64)  NOT NULL UNIQUE,
-    password   varchar(255) NOT NULL,           -- 密码哈希(BCrypt),禁明文
-    email      varchar(128),
-    real_name  varchar(64),
-    status     smallint     NOT NULL DEFAULT 1, -- 1=正常 0=禁用
-    deleted_at timestamptz,                     -- 软删:NULL=存活,非NULL=已删号
-    created_at timestamptz  NOT NULL DEFAULT now(),
-    updated_at timestamptz  NOT NULL DEFAULT now()
+    id                     uuid PRIMARY KEY DEFAULT uuidv7(),
+    username               varchar(64)  NOT NULL UNIQUE,
+    password               varchar(255) NOT NULL,
+    email                  varchar(128),
+    real_name              varchar(64),
+    status                 smallint     NOT NULL DEFAULT 1,
+    link_security_revision bigint       NOT NULL DEFAULT 0,
+    deleted_at             timestamptz,
+    created_at             timestamptz  NOT NULL DEFAULT now(),
+    updated_at             timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT ck_user_status CHECK (status IN (0, 1, 2)),
+    CONSTRAINT ck_user_link_security_revision CHECK (link_security_revision >= 0)
 );
-
--- ---------- RBAC ----------
+COMMENT ON COLUMN t_user.status IS '0=DEACTIVATED, 1=ACTIVE, 2=SECURITY_SUSPENDED; deletion is represented by deleted_at';
 
 CREATE TABLE t_role
 (
-    id          uuid PRIMARY KEY     DEFAULT uuidv7(),
-    code        varchar(32) NOT NULL UNIQUE, -- USER / ADMIN
-    name        varchar(64) NOT NULL,
+    id          uuid PRIMARY KEY DEFAULT uuidv7(),
+    code        varchar(32)  NOT NULL UNIQUE,
+    name        varchar(64)  NOT NULL,
     description varchar(255),
-    created_at  timestamptz NOT NULL DEFAULT now()
+    created_at  timestamptz  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE t_permission
 (
-    id          uuid PRIMARY KEY     DEFAULT uuidv7(),
-    code        varchar(64) NOT NULL UNIQUE, -- link:create / group:delete ...
-    name        varchar(64) NOT NULL,
+    id          uuid PRIMARY KEY DEFAULT uuidv7(),
+    code        varchar(64)  NOT NULL UNIQUE,
+    name        varchar(64)  NOT NULL,
     description varchar(255),
-    created_at  timestamptz NOT NULL DEFAULT now()
+    created_at  timestamptz  NOT NULL DEFAULT now()
 );
 
 CREATE TABLE t_user_role
@@ -51,7 +43,7 @@ CREATE TABLE t_user_role
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, role_id)
 );
-CREATE INDEX idx_user_role_role ON t_user_role (role_id); -- 反查「某角色有哪些用户」
+CREATE INDEX idx_user_role_role_user ON t_user_role (role_id, user_id);
 
 CREATE TABLE t_role_permission
 (
@@ -60,28 +52,26 @@ CREATE TABLE t_role_permission
     created_at    timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (role_id, permission_id)
 );
-CREATE INDEX idx_role_perm_perm ON t_role_permission (permission_id);
-
--- ---------- 域名授权 ----------
--- 「域名白名单」判断在应用层:host == domain || host.endsWith('.' + domain)
--- (子域命中、点号做边界,天然排除 badexample.com)
--- 「谁能在这个域名下创建短链」由下面绑定动态求并集(角色/域名组/用户 4 条路径),
--- 与 t_domain.status(启用/禁用)是两回事:status 是全局开关,绑定是"授权给谁"。
+CREATE INDEX idx_role_permission_permission_role ON t_role_permission (permission_id, role_id);
 
 CREATE TABLE t_domain
 (
-    id         uuid PRIMARY KEY      DEFAULT uuidv7(),
-    domain     varchar(253) NOT NULL UNIQUE,    -- 归一化:小写、去协议/端口/路径,只存 host
-    name       varchar(128),
-    status     smallint     NOT NULL DEFAULT 1, -- 1=启用 0=禁用(禁用→其下所有短链失效 + 禁止新增)
-    created_at timestamptz  NOT NULL DEFAULT now(),
-    updated_at timestamptz  NOT NULL DEFAULT now()
+    id             uuid PRIMARY KEY DEFAULT uuidv7(),
+    domain         varchar(253) NOT NULL UNIQUE,
+    name           varchar(128),
+    status         smallint     NOT NULL DEFAULT 1,
+    state_revision bigint       NOT NULL DEFAULT 1,
+    created_at     timestamptz  NOT NULL DEFAULT now(),
+    updated_at     timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT ck_domain_status CHECK (status IN (0, 1)),
+    CONSTRAINT ck_domain_state_revision CHECK (state_revision >= 1)
 );
+COMMENT ON COLUMN t_domain.domain IS 'Normalized lowercase short-link host without scheme, port, path, or trailing dot';
 
 CREATE TABLE t_domain_group
 (
-    id         uuid PRIMARY KEY      DEFAULT uuidv7(),
-    code       varchar(64)  NOT NULL UNIQUE, -- 如 marketing-domains
+    id         uuid PRIMARY KEY DEFAULT uuidv7(),
+    code       varchar(64)  NOT NULL UNIQUE,
     name       varchar(128) NOT NULL,
     created_at timestamptz  NOT NULL DEFAULT now(),
     updated_at timestamptz  NOT NULL DEFAULT now()
@@ -94,7 +84,7 @@ CREATE TABLE t_domain_group_domain
     created_at      timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (domain_group_id, domain_id)
 );
-CREATE INDEX idx_dgd_domain ON t_domain_group_domain (domain_id);
+CREATE INDEX idx_domain_group_domain_domain_group ON t_domain_group_domain (domain_id, domain_group_id);
 
 CREATE TABLE t_role_domain
 (
@@ -103,7 +93,7 @@ CREATE TABLE t_role_domain
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (role_id, domain_id)
 );
-CREATE INDEX idx_role_domain_domain ON t_role_domain (domain_id);
+CREATE INDEX idx_role_domain_domain_role ON t_role_domain (domain_id, role_id);
 
 CREATE TABLE t_role_domain_group
 (
@@ -112,6 +102,7 @@ CREATE TABLE t_role_domain_group
     created_at      timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (role_id, domain_group_id)
 );
+CREATE INDEX idx_role_domain_group_group_role ON t_role_domain_group (domain_group_id, role_id);
 
 CREATE TABLE t_user_domain
 (
@@ -120,6 +111,7 @@ CREATE TABLE t_user_domain
     created_at timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, domain_id)
 );
+CREATE INDEX idx_user_domain_domain_user ON t_user_domain (domain_id, user_id);
 
 CREATE TABLE t_user_domain_group
 (
@@ -128,47 +120,131 @@ CREATE TABLE t_user_domain_group
     created_at      timestamptz NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, domain_group_id)
 );
+CREATE INDEX idx_user_domain_group_group_user ON t_user_domain_group (domain_group_id, user_id);
 
--- ---------- 种子数据 ----------
+CREATE TABLE t_user_link_security_restriction
+(
+    id          uuid PRIMARY KEY DEFAULT uuidv7(),
+    user_id     uuid         NOT NULL REFERENCES t_user (id) ON DELETE RESTRICT,
+    mode        varchar(24)  NOT NULL,
+    range_start timestamptz,
+    range_end   timestamptz,
+    active      boolean      NOT NULL DEFAULT TRUE,
+    reason_code varchar(64)  NOT NULL,
+    created_at  timestamptz  NOT NULL DEFAULT now(),
+    revoked_at  timestamptz,
+    CONSTRAINT ck_link_security_mode CHECK (mode IN ('ALL', 'CREATED_DURING')),
+    CONSTRAINT ck_link_security_range CHECK (
+        (mode = 'ALL' AND range_start IS NULL AND range_end IS NULL)
+        OR (mode = 'CREATED_DURING' AND (range_start IS NOT NULL OR range_end IS NOT NULL)
+            AND (range_start IS NULL OR range_end IS NULL OR range_start < range_end))
+    ),
+    CONSTRAINT ck_link_security_active CHECK (
+        (active AND revoked_at IS NULL) OR (NOT active AND revoked_at IS NOT NULL)
+    )
+);
+CREATE INDEX idx_user_link_security_active
+    ON t_user_link_security_restriction (user_id, created_at)
+    WHERE active;
+
+CREATE TABLE t_authorization_jwk
+(
+    key_id          varchar(64) PRIMARY KEY,
+    algorithm       varchar(16) NOT NULL,
+    public_key_der  text        NOT NULL,
+    private_key_der text        NOT NULL,
+    status          smallint    NOT NULL DEFAULT 1,
+    created_at      timestamptz NOT NULL DEFAULT now(),
+    retired_at      timestamptz,
+    CONSTRAINT ck_authorization_jwk_algorithm CHECK (algorithm = 'RS256'),
+    CONSTRAINT ck_authorization_jwk_status CHECK (status IN (0, 1)),
+    CONSTRAINT ck_authorization_jwk_retired CHECK (
+        (status = 1 AND retired_at IS NULL) OR (status = 0 AND retired_at IS NOT NULL)
+    )
+);
+CREATE UNIQUE INDEX uq_authorization_jwk_active ON t_authorization_jwk ((status)) WHERE status = 1;
+
+CREATE TABLE t_outbox_event
+(
+    id              uuid PRIMARY KEY,
+    event_type      varchar(64)   NOT NULL,
+    schema_version  integer       NOT NULL,
+    stream_key      varchar(160)  NOT NULL,
+    partition_key   varchar(64)   NOT NULL,
+    trace_id        varchar(64),
+    payload         jsonb         NOT NULL,
+    status          smallint      NOT NULL DEFAULT 0,
+    retry_count     integer       NOT NULL DEFAULT 0,
+    next_retry_at   timestamptz,
+    last_attempt_at timestamptz,
+    last_error      varchar(2000),
+    created_at      timestamptz   NOT NULL DEFAULT now(),
+    sent_at         timestamptz,
+    CONSTRAINT ck_outbox_schema_version CHECK (schema_version >= 1),
+    CONSTRAINT ck_outbox_status CHECK (status IN (0, 1, 2)),
+    CONSTRAINT ck_outbox_retry_count CHECK (retry_count >= 0),
+    CONSTRAINT ck_outbox_sent_state CHECK (
+        (status = 1 AND sent_at IS NOT NULL) OR (status IN (0, 2) AND sent_at IS NULL)
+    )
+);
+CREATE INDEX idx_outbox_dispatch ON t_outbox_event (status, next_retry_at, created_at);
 
 INSERT INTO t_role (code, name, description)
-VALUES ('USER', '普通用户', '默认角色:管理自己的分组与短链'),
-       ('ADMIN', '平台管理员', '管理全部租户、分组与短链');
+VALUES ('USER', '普通用户', '管理自己有权使用的域名下创建的资源'),
+       ('NORMAL_ADMIN', '普通管理员', '日常域名与短链运营管理'),
+       ('SYSTEM_ADMIN', '系统管理员', '系统全部管理能力');
 
-INSERT INTO t_permission (code, name, description)
-VALUES
-    -- 用户域
-    ('user:read', '查看个人信息', '查看自己的资料'),
-    ('user:update', '维护个人信息', '修改头像、邮箱等资料'),
-    -- 分组域
-    ('group:create', '创建分组', '新建分组'),
-    ('group:read', '查看分组', '查询分组列表'),
-    ('group:update', '编辑分组', '修改分组名/排序'),
-    ('group:delete', '删除分组', '删除分组'),
-    -- 短链域
-    ('link:create', '创建短链', '单个/批量创建短链'),
-    ('link:read', '查看短链', '分页检索短链'),
-    ('link:update', '编辑短链', '修改/设置有效期'),
-    ('link:delete', '删除短链', '回收站删除/恢复/彻底清除'),
-    -- 统计域
-    ('stats:read', '查看统计', '单链/分组报表查询'),
-    -- 平台管理
-    ('user:manage', '用户管理', '管理全部用户(平台管理员)');
+INSERT INTO t_permission (code, name)
+VALUES ('user:read', '查看个人信息'),
+       ('user:update', '维护个人信息'),
+       ('user:manage', '管理用户'),
+       ('group:create', '创建分组'),
+       ('group:read', '查看分组'),
+       ('group:update', '编辑分组'),
+       ('group:delete', '删除分组'),
+       ('link:create', '创建短链'),
+       ('link:read', '查看短链'),
+       ('link:update', '编辑自己的短链'),
+       ('link:delete', '删除自己的短链'),
+       ('link:manage:any', '管理任意短链'),
+       ('stats:read', '查看统计'),
+       ('domain:create', '创建域名'),
+       ('domain:read', '查看域名'),
+       ('domain:update', '编辑域名'),
+       ('domain:disable', '停用域名'),
+       ('security:manage', '执行安全处置');
 
--- USER:自助服务权限(不含 user:manage)
 INSERT INTO t_role_permission (role_id, permission_id)
-SELECT r.id, p.id
-FROM t_role r,
-     t_permission p
-WHERE r.code = 'USER'
-  AND p.code IN ('user:read', 'user:update',
-                 'group:create', 'group:read', 'group:update', 'group:delete',
-                 'link:create', 'link:read', 'link:update', 'link:delete',
-                 'stats:read');
+SELECT role.id, permission.id
+FROM t_role role CROSS JOIN t_permission permission
+WHERE role.code = 'USER'
+  AND permission.code IN (
+      'user:read', 'user:update',
+      'group:create', 'group:read', 'group:update', 'group:delete',
+      'link:create', 'link:read', 'link:update', 'link:delete',
+      'stats:read'
+  );
 
--- ADMIN:全部权限
 INSERT INTO t_role_permission (role_id, permission_id)
-SELECT r.id, p.id
-FROM t_role r
-         CROSS JOIN t_permission p
-WHERE r.code = 'ADMIN';
+SELECT role.id, permission.id
+FROM t_role role CROSS JOIN t_permission permission
+WHERE role.code = 'NORMAL_ADMIN'
+  AND permission.code IN (
+      'user:read', 'group:read',
+      'link:create', 'link:read', 'link:update', 'link:delete', 'link:manage:any',
+      'stats:read',
+      'domain:create', 'domain:read', 'domain:update', 'domain:disable'
+  );
+
+INSERT INTO t_role_permission (role_id, permission_id)
+SELECT role.id, permission.id
+FROM t_role role CROSS JOIN t_permission permission
+WHERE role.code = 'SYSTEM_ADMIN';
+
+INSERT INTO t_domain (id, domain, name)
+VALUES ('01991d2e-0000-7000-8000-000000000001', 'go.linkforge.dev', '原型演示域名');
+
+INSERT INTO t_role_domain (role_id, domain_id)
+SELECT role.id, domain.id
+FROM t_role role CROSS JOIN t_domain domain
+WHERE role.code = 'USER' AND domain.domain = 'go.linkforge.dev';
