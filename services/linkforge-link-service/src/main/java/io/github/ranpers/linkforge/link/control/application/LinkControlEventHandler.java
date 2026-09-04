@@ -28,6 +28,15 @@ public class LinkControlEventHandler {
         this.cache = cache;
     }
 
+    /**
+     * 原子地去重事件、拒绝陈旧修订并更新本地控制投影。
+     *
+     * <p>缓存更新仅在数据库事务提交后执行。重复事件和低于或等于当前检查点的事件
+     * 都会成功消费，但不会再次修改投影。</p>
+     *
+     * @param event 已完成反序列化和不变量校验的控制事件
+     * @return 明确区分已应用、重复和陈旧事件的处理结果
+     */
     @Transactional
     public LinkControlEventHandlingResult handle(LinkControlEvent event) {
         if (!inbox.recordIfNew(event)) {

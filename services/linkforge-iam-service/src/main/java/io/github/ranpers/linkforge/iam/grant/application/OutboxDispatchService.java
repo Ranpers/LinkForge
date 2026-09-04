@@ -32,6 +32,15 @@ public class OutboxDispatchService {
         this.publisher = publisher;
     }
 
+    /**
+     * 在单个数据库事务内投递一批到期事件并推进其状态。
+     *
+     * <p>遇到首个代理故障即停止本批次，避免按批次数量累加发送超时。代理确认后、
+     * 数据库提交前崩溃可能造成重复投递，消费者必须按事件 ID 去重。</p>
+     *
+     * @param settings 批次大小、最大尝试次数、退避和发送超时设置
+     * @return 本批次锁定、发送、重试和 parked 的数量摘要
+     */
     @Transactional
     public OutboxDispatchSummary dispatchBatch(OutboxDispatchSettings settings) {
         List<PendingOutboxEvent> events = store.lockDueRows(settings.batchSize());
