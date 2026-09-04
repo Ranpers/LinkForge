@@ -19,25 +19,49 @@ class MybatisMapperXmlTest {
                 "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper"
                         + ".insertByRoleCode"
         ));
-        assertTrue(configuration.hasStatement(
-                "io.github.ranpers.linkforge.iam.user.adapter.out.persistence.role.UserRoleMapper"
-                        + ".stageGrantedDomainsForAssignment"
-        ));
     }
 
     @Test
-    void shouldParseGrantProjectionMapperXml() throws Exception {
-        Configuration configuration = parse("mapper/grant/GrantProjectionMapper.xml");
+    void shouldParseLinkAuthorizationMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/grant/LinkAuthorizationMapper.xml");
         String namespace =
-                "io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.GrantProjectionMapper";
+                "io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.LinkAuthorizationMapper";
 
-        assertTrue(configuration.hasStatement(namespace + ".createAffectedPairBuffer"));
-        assertTrue(configuration.hasStatement(namespace + ".clearAffectedPairBuffer"));
-        assertTrue(configuration.hasStatement(namespace + ".stagePairs"));
-        assertTrue(configuration.hasStatement(namespace + ".insertPlaceholdersFromBuffer"));
-        assertTrue(configuration.hasStatement(namespace + ".lockStagedGrantStates"));
-        assertTrue(configuration.hasStatement(namespace + ".reconcileAndInsertOutbox"));
-        assertTrue(configuration.hasStatement(namespace + ".isGranted"));
+        assertTrue(configuration.hasStatement(namespace + ".findSnapshot"));
+        assertTrue(configuration.hasStatement(namespace + ".findManagementSnapshot"));
+    }
+
+    @Test
+    void shouldParseDomainAvailabilityMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/domain/DomainAvailabilityMapper.xml");
+        String namespace =
+                "io.github.ranpers.linkforge.iam.domain.adapter.out.persistence.DomainAvailabilityMapper";
+
+        assertTrue(configuration.hasStatement(namespace + ".change"));
+    }
+
+    @Test
+    void shouldParseLinkSecurityRestrictionMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/security/LinkSecurityRestrictionMapper.xml");
+        String namespace =
+                "io.github.ranpers.linkforge.iam.security.adapter.out.persistence.LinkSecurityRestrictionMapper";
+
+        assertTrue(configuration.hasStatement(namespace + ".actorAllowed"));
+        assertTrue(configuration.hasStatement(namespace + ".lockTargetUser"));
+        assertTrue(configuration.hasStatement(namespace + ".insertRestriction"));
+        assertTrue(configuration.hasStatement(namespace + ".restrictionActive"));
+        assertTrue(configuration.hasStatement(namespace + ".revokeRestriction"));
+        assertTrue(configuration.hasStatement(namespace + ".incrementRevision"));
+        assertTrue(configuration.hasStatement(namespace + ".appendSnapshotEvent"));
+    }
+
+    @Test
+    void shouldParseUserSecurityStatusMapperXml() throws Exception {
+        Configuration configuration = parse("mapper/security/UserSecurityStatusMapper.xml");
+        String namespace =
+                "io.github.ranpers.linkforge.iam.security.adapter.out.persistence.UserSecurityStatusMapper";
+
+        assertTrue(configuration.hasStatement(namespace + ".change"));
     }
 
     @Test
