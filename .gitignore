@@ -7,5 +7,8 @@ target/
 *.iws
 *.ipr
 
+### Codex local configuration ###
+.codex/
+
 ### Local secrets ###
 .env
