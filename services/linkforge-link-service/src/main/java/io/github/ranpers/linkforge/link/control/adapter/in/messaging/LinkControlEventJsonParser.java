@@ -138,7 +138,10 @@ public class LinkControlEventJsonParser {
         if (value == null || value.isNull()) {
             return null;
         }
-        return text(root, "traceId");
+        if (!value.isString()) {
+            throw invalid("字段必须是字符串或 null: traceId");
+        }
+        return value.stringValue();
     }
 
     private static UUID uuid(JsonNode root, String field) {

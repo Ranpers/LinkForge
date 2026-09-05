@@ -55,8 +55,9 @@ class LinkControlEventJsonParserTest {
     }
 
     @Test
-    void acceptsMissingTraceId() {
+    void acceptsMissingAndNullTraceId() {
         assertNull(parser.parse(domainEventJson(null)).traceId());
+        assertNull(parser.parse(domainEventJsonWithNullTraceId()).traceId());
     }
 
     @Test
@@ -70,6 +71,18 @@ class LinkControlEventJsonParserTest {
                 () -> parser.parse(domainEventJson(
                         "a".repeat(ControlEventTraceId.MAX_LENGTH + 1)
                 ))
+        );
+    }
+
+    @Test
+    void delegatesTraceIdBlankSemanticsToTheWireDomainType() {
+        assertThrows(
+                InvalidLinkControlEventException.class,
+                () -> parser.parse(domainEventJson("\u00A0"))
+        );
+        assertEquals(
+                "\u001C",
+                parser.parse(domainEventJson("\\u001C")).traceId().value()
         );
     }
 
@@ -92,10 +105,18 @@ class LinkControlEventJsonParserTest {
     }
 
     private static String domainEventJson(String traceId) {
-        UUID domainId = UUID.randomUUID();
         String traceField = traceId == null
                 ? ""
                 : "\"traceId\": \"" + traceId + "\",";
+        return domainEventJsonWithTraceField(traceField);
+    }
+
+    private static String domainEventJsonWithNullTraceId() {
+        return domainEventJsonWithTraceField("\"traceId\": null,");
+    }
+
+    private static String domainEventJsonWithTraceField(String traceField) {
+        UUID domainId = UUID.randomUUID();
         return """
                 {
                   "eventId": "%s",
