@@ -84,6 +84,10 @@ class LinkControlEventJsonParserTest {
                 "\u001C",
                 parser.parse(domainEventJson("\\u001C")).traceId().value()
         );
+        assertEquals(
+                " \u00A0a\u3000 ",
+                parser.parse(domainEventJson(" \u00A0a\u3000 ")).traceId().value()
+        );
     }
 
     @Test

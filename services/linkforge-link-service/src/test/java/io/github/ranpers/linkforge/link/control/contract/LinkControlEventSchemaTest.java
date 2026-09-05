@@ -31,6 +31,8 @@ class LinkControlEventSchemaTest {
         assertTrue(isValid(null, traceIdSchema));
         assertTrue(isValid("trace-123", traceIdSchema));
         assertTrue(isValid("😀".repeat(64), traceIdSchema));
+        assertTrue(isValid(" \u00A0a\u3000 ", traceIdSchema));
+        assertTrue(isValid("\u001C", traceIdSchema));
     }
 
     @Test

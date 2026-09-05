@@ -36,6 +36,15 @@ class ControlEventTraceIdTest {
     }
 
     @Test
+    void acceptsMixedWireWhitespaceAndCodePointsOutsideTheWireSet() {
+        String mixedWhitespace = " \u00A0a\u3000 ";
+        String informationSeparator = "\u001C";
+
+        assertEquals(mixedWhitespace, new ControlEventTraceId(mixedWhitespace).value());
+        assertEquals(informationSeparator, new ControlEventTraceId(informationSeparator).value());
+    }
+
+    @Test
     void rejectsEmptyAndEveryWireWhitespaceCodePoint() {
         assertThrows(
                 InvalidControlEventTraceIdException.class,
