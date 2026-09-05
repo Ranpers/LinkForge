@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.link.control.adapter.in.messaging;
 
+import io.github.ranpers.linkforge.link.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEventType;
@@ -29,14 +30,15 @@ public class LinkControlEventJsonParser {
         JsonNode root = readObject(message);
         UUID eventId = uuid(root, "eventId");
         LinkControlEventType type = eventType(root);
-        int schemaVersion = positiveInt(root, "schemaVersion");
+        int schemaVersion = schemaVersion(root);
         String streamKey = text(root, "streamKey");
         long revision = positiveLong(root, "revision");
         OffsetDateTime occurredAt = dateTime(root, "occurredAt");
-        String traceId = optionalText(root, "traceId");
-        JsonNode payload = object(root, "payload");
+        String traceIdValue = optionalTraceId(root);
+        JsonNode payload = payload(root);
 
         try {
+            var traceId = ControlEventTraceId.fromNullable(traceIdValue);
             return switch (type) {
                 case DOMAIN_AVAILABILITY_CHANGED -> new DomainAvailabilityChanged(
                         eventId,
@@ -47,19 +49,18 @@ public class LinkControlEventJsonParser {
                         traceId,
                         uuid(payload, "domainId"),
                         text(payload, "host"),
-                        bool(payload, "enabled")
+                        enabled(payload)
                 );
-                case USER_LINK_SECURITY_RESTRICTIONS_CHANGED ->
-                        new UserLinkSecurityRestrictionsChanged(
-                                eventId,
-                                schemaVersion,
-                                streamKey,
-                                revision,
-                                occurredAt,
-                                traceId,
-                                uuid(payload, "userId"),
-                                restrictions(payload)
-                        );
+                case USER_LINK_SECURITY_RESTRICTIONS_CHANGED -> new UserLinkSecurityRestrictionsChanged(
+                        eventId,
+                        schemaVersion,
+                        streamKey,
+                        revision,
+                        occurredAt,
+                        traceId,
+                        uuid(payload, "userId"),
+                        restrictions(payload)
+                );
             };
         } catch (IllegalArgumentException | NullPointerException exception) {
             throw invalid("Link 控制事件字段不一致: " + exception.getMessage(), exception);
@@ -116,10 +117,10 @@ public class LinkControlEventJsonParser {
         }
     }
 
-    private static JsonNode object(JsonNode root, String field) {
-        JsonNode value = root.get(field);
+    private static JsonNode payload(JsonNode root) {
+        JsonNode value = root.get("payload");
         if (value == null || !value.isObject()) {
-            throw invalid("字段必须是对象: " + field);
+            throw invalid("字段必须是对象: payload");
         }
         return value;
     }
@@ -132,12 +133,12 @@ public class LinkControlEventJsonParser {
         return value.stringValue();
     }
 
-    private static String optionalText(JsonNode root, String field) {
-        JsonNode value = root.get(field);
+    private static String optionalTraceId(JsonNode root) {
+        JsonNode value = root.get("traceId");
         if (value == null || value.isNull()) {
             return null;
         }
-        return text(root, field);
+        return text(root, "traceId");
     }
 
     private static UUID uuid(JsonNode root, String field) {
@@ -148,10 +149,10 @@ public class LinkControlEventJsonParser {
         }
     }
 
-    private static int positiveInt(JsonNode root, String field) {
-        long value = positiveLong(root, field);
+    private static int schemaVersion(JsonNode root) {
+        long value = positiveLong(root, "schemaVersion");
         if (value > Integer.MAX_VALUE) {
-            throw invalid("字段超出 integer 范围: " + field);
+            throw invalid("字段超出 integer 范围: schemaVersion");
         }
         return (int) value;
     }
@@ -168,10 +169,10 @@ public class LinkControlEventJsonParser {
         return result;
     }
 
-    private static boolean bool(JsonNode root, String field) {
-        JsonNode value = root.get(field);
+    private static boolean enabled(JsonNode root) {
+        JsonNode value = root.get("enabled");
         if (value == null || !value.isBoolean()) {
-            throw invalid("字段必须是 boolean: " + field);
+            throw invalid("字段必须是 boolean: enabled");
         }
         return value.booleanValue();
     }

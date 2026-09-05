@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application;
 
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.ChangeUserSecurityStatusUseCase;
 import io.github.ranpers.linkforge.iam.security.application.port.out.UserSecurityStatusStore;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,12 @@ public class UserSecurityStatusService implements ChangeUserSecurityStatusUseCas
 
     @Override
     @Transactional
-    public void change(UUID actorUserId, UUID targetUserId, boolean suspended, String traceId) {
+    public void change(
+            UUID actorUserId,
+            UUID targetUserId,
+            boolean suspended,
+            ControlEventTraceId traceId
+    ) {
         switch (store.change(actorUserId, targetUserId, suspended, traceId)) {
             case CHANGED, UNCHANGED -> {
             }

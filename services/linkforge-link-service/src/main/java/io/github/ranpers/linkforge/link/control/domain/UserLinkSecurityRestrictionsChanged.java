@@ -11,7 +11,7 @@ public record UserLinkSecurityRestrictionsChanged(
         String streamKey,
         long revision,
         OffsetDateTime occurredAt,
-        String traceId,
+        ControlEventTraceId traceId,
         UUID userId,
         List<LinkSecurityRestriction> restrictions
 ) implements LinkControlEvent {

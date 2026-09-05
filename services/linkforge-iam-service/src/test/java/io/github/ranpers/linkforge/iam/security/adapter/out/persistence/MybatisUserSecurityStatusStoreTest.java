@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.adapter.out.persistence;
 
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.iam.security.application.port.out.UserSecurityStatusStore;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +23,7 @@ class MybatisUserSecurityStatusStoreTest {
             new MybatisUserSecurityStatusStore(statusMapper, restrictionMapper);
     private final UUID actorUserId = UUID.randomUUID();
     private final UUID targetUserId = UUID.randomUUID();
+    private final ControlEventTraceId traceId = new ControlEventTraceId("trace");
 
     @Test
     void freezeCreatesSystemRestrictionAndPublishesSnapshot() {
@@ -31,7 +33,7 @@ class MybatisUserSecurityStatusStoreTest {
         when(restrictionMapper.appendSnapshotEvent(targetUserId, 7L, "trace")).thenReturn(1);
 
         UserSecurityStatusStore.ChangeOutcome outcome =
-                store.change(actorUserId, targetUserId, true, "trace");
+                store.change(actorUserId, targetUserId, true, traceId);
 
         assertEquals(UserSecurityStatusStore.ChangeOutcome.CHANGED, outcome);
         verify(restrictionMapper).appendSnapshotEvent(targetUserId, 7L, "trace");
@@ -45,7 +47,7 @@ class MybatisUserSecurityStatusStoreTest {
         when(restrictionMapper.appendSnapshotEvent(targetUserId, 8L, "trace")).thenReturn(1);
 
         UserSecurityStatusStore.ChangeOutcome outcome =
-                store.change(actorUserId, targetUserId, false, "trace");
+                store.change(actorUserId, targetUserId, false, traceId);
 
         assertEquals(UserSecurityStatusStore.ChangeOutcome.CHANGED, outcome);
         verify(statusMapper).revokeAccountSuspensionRestriction(targetUserId);
@@ -58,7 +60,7 @@ class MybatisUserSecurityStatusStoreTest {
         when(statusMapper.activateAccountSuspensionRestriction(targetUserId)).thenReturn(0);
 
         UserSecurityStatusStore.ChangeOutcome outcome =
-                store.change(actorUserId, targetUserId, true, "trace");
+                store.change(actorUserId, targetUserId, true, traceId);
 
         assertEquals(UserSecurityStatusStore.ChangeOutcome.UNCHANGED, outcome);
         verifyNoInteractions(restrictionMapper);
@@ -72,7 +74,7 @@ class MybatisUserSecurityStatusStoreTest {
         when(restrictionMapper.appendSnapshotEvent(targetUserId, 9L, "trace")).thenReturn(1);
 
         UserSecurityStatusStore.ChangeOutcome outcome =
-                store.change(actorUserId, targetUserId, true, "trace");
+                store.change(actorUserId, targetUserId, true, traceId);
 
         assertEquals(UserSecurityStatusStore.ChangeOutcome.CHANGED, outcome);
         verify(restrictionMapper).appendSnapshotEvent(targetUserId, 9L, "trace");
@@ -83,7 +85,7 @@ class MybatisUserSecurityStatusStoreTest {
         when(statusMapper.change(actorUserId, targetUserId, true)).thenReturn(0);
 
         UserSecurityStatusStore.ChangeOutcome outcome =
-                store.change(actorUserId, targetUserId, true, "trace");
+                store.change(actorUserId, targetUserId, true, traceId);
 
         assertEquals(UserSecurityStatusStore.ChangeOutcome.DENIED, outcome);
         verify(statusMapper, never()).activateAccountSuspensionRestriction(targetUserId);
@@ -99,7 +101,7 @@ class MybatisUserSecurityStatusStoreTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> store.change(actorUserId, targetUserId, true, "trace")
+                () -> store.change(actorUserId, targetUserId, true, traceId)
         );
     }
 }

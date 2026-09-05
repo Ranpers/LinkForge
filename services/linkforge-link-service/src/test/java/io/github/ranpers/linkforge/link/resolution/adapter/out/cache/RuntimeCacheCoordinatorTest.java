@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.link.resolution.adapter.out.cache;
 
+import io.github.ranpers.linkforge.link.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkSecurityRestriction;
 import io.github.ranpers.linkforge.link.control.domain.RestrictionMode;
@@ -33,7 +34,7 @@ class RuntimeCacheCoordinatorTest {
                 "DOMAIN:" + domainId,
                 7,
                 OffsetDateTime.parse("2026-09-04T00:00:00Z"),
-                "trace",
+                new ControlEventTraceId("trace"),
                 domainId,
                 "go.example.com",
                 false
@@ -53,7 +54,7 @@ class RuntimeCacheCoordinatorTest {
                 "USER_LINK_SECURITY:" + userId,
                 3,
                 createdAt,
-                "trace",
+                new ControlEventTraceId("trace"),
                 userId,
                 List.of(new LinkSecurityRestriction(
                         restrictionId,

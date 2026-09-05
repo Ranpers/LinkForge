@@ -2,12 +2,14 @@ package io.github.ranpers.linkforge.link.control.adapter.in.messaging;
 
 import io.github.ranpers.linkforge.link.control.domain.RestrictionMode;
 import io.github.ranpers.linkforge.link.control.domain.UserLinkSecurityRestrictionsChanged;
+import io.github.ranpers.linkforge.link.control.domain.ControlEventTraceId;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LinkControlEventJsonParserTest {
@@ -48,7 +50,27 @@ class LinkControlEventJsonParserTest {
 
         assertEquals(7, event.revision());
         assertEquals(userId, event.userId());
+        assertEquals("trace", event.traceId().value());
         assertEquals(RestrictionMode.CREATED_DURING, event.restrictions().getFirst().mode());
+    }
+
+    @Test
+    void acceptsMissingTraceId() {
+        assertNull(parser.parse(domainEventJson(null)).traceId());
+    }
+
+    @Test
+    void rejectsBlankAndOversizedTraceId() {
+        assertThrows(
+                InvalidLinkControlEventException.class,
+                () -> parser.parse(domainEventJson("   "))
+        );
+        assertThrows(
+                InvalidLinkControlEventException.class,
+                () -> parser.parse(domainEventJson(
+                        "a".repeat(ControlEventTraceId.MAX_LENGTH + 1)
+                ))
+        );
     }
 
     @Test
@@ -67,5 +89,28 @@ class LinkControlEventJsonParserTest {
                 """.formatted(UUID.randomUUID(), UUID.randomUUID(), userId);
 
         assertThrows(InvalidLinkControlEventException.class, () -> parser.parse(json));
+    }
+
+    private static String domainEventJson(String traceId) {
+        UUID domainId = UUID.randomUUID();
+        String traceField = traceId == null
+                ? ""
+                : "\"traceId\": \"" + traceId + "\",";
+        return """
+                {
+                  "eventId": "%s",
+                  "eventType": "DomainAvailabilityChanged",
+                  "schemaVersion": 1,
+                  "streamKey": "DOMAIN:%s",
+                  "revision": 1,
+                  "occurredAt": "2026-09-04T00:00:00Z",
+                  %s
+                  "payload": {
+                    "domainId": "%s",
+                    "host": "go.example.com",
+                    "enabled": true
+                  }
+                }
+                """.formatted(UUID.randomUUID(), domainId, traceField, domainId);
     }
 }

@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application;
 
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.CreateLinkSecurityRestrictionCommand;
 import io.github.ranpers.linkforge.iam.security.application.port.out.LinkSecurityRestrictionStore;
 import io.github.ranpers.linkforge.iam.security.domain.LinkSecurityRestriction;
@@ -19,6 +20,7 @@ class LinkSecurityRestrictionServiceTest {
     private final LinkSecurityRestrictionService service = new LinkSecurityRestrictionService(store);
     private final UUID actorUserId = UUID.randomUUID();
     private final UUID targetUserId = UUID.randomUUID();
+    private final ControlEventTraceId traceId = new ControlEventTraceId("trace");
 
     @Test
     void returnsCreatedRestrictionId() {
@@ -46,17 +48,17 @@ class LinkSecurityRestrictionServiceTest {
     @Test
     void revokeIsIdempotentButMissingRestrictionIsNot() {
         UUID restrictionId = UUID.randomUUID();
-        when(store.revoke(actorUserId, targetUserId, restrictionId, "trace"))
+        when(store.revoke(actorUserId, targetUserId, restrictionId, traceId))
                 .thenReturn(LinkSecurityRestrictionStore.MutationOutcome.UNCHANGED);
 
-        service.revoke(actorUserId, targetUserId, restrictionId, "trace");
+        service.revoke(actorUserId, targetUserId, restrictionId, traceId);
 
         UUID missingId = UUID.randomUUID();
-        when(store.revoke(actorUserId, targetUserId, missingId, "trace"))
+        when(store.revoke(actorUserId, targetUserId, missingId, traceId))
                 .thenReturn(LinkSecurityRestrictionStore.MutationOutcome.RESTRICTION_NOT_FOUND);
         assertThrows(
                 LinkSecurityRestrictionNotFoundException.class,
-                () -> service.revoke(actorUserId, targetUserId, missingId, "trace")
+                () -> service.revoke(actorUserId, targetUserId, missingId, traceId)
         );
     }
 
@@ -70,7 +72,7 @@ class LinkSecurityRestrictionServiceTest {
                         null,
                         "ACCOUNT_COMPROMISED"
                 ),
-                "trace"
+                traceId
         );
     }
 }

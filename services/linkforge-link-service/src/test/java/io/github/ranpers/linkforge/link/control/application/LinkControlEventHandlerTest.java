@@ -4,6 +4,7 @@ import io.github.ranpers.linkforge.link.control.application.port.out.LinkControl
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlCache;
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlInbox;
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlProjection;
+import io.github.ranpers.linkforge.link.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import org.junit.jupiter.api.Test;
@@ -77,7 +78,7 @@ class LinkControlEventHandlerTest {
                 "DOMAIN:" + domainId,
                 revision,
                 OffsetDateTime.parse("2026-09-04T00:00:00Z"),
-                "trace",
+                new ControlEventTraceId("trace"),
                 domainId,
                 "go.example.com",
                 false

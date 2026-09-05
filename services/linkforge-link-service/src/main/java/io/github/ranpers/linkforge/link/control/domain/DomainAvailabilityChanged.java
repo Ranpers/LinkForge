@@ -11,7 +11,7 @@ public record DomainAvailabilityChanged(
         String streamKey,
         long revision,
         OffsetDateTime occurredAt,
-        String traceId,
+        ControlEventTraceId traceId,
         UUID domainId,
         String host,
         boolean enabled

@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.application;
 
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.ChangeDomainAvailabilityUseCase;
 import io.github.ranpers.linkforge.iam.domain.application.port.out.DomainAvailabilityStore;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,12 @@ public class DomainAvailabilityService implements ChangeDomainAvailabilityUseCas
 
     @Override
     @Transactional
-    public void change(UUID actorUserId, UUID domainId, boolean enabled, String traceId) {
+    public void change(
+            UUID actorUserId,
+            UUID domainId,
+            boolean enabled,
+            ControlEventTraceId traceId
+    ) {
         switch (store.change(actorUserId, domainId, enabled, traceId)) {
             case CHANGED, UNCHANGED -> {
             }
