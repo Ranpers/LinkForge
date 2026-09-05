@@ -18,5 +18,12 @@ public interface ShortLinkMapper {
             @Param("userId") UUID userId
     );
 
-    int insertIfIdempotencyAbsent(@Param("link") ShortLink link);
+    int tryInsert(@Param("link") ShortLink link);
+
+    boolean existsById(@Param("linkId") UUID linkId);
+
+    boolean existsByDomainAndCode(
+            @Param("domainId") UUID domainId,
+            @Param("linkCode") String linkCode
+    );
 }

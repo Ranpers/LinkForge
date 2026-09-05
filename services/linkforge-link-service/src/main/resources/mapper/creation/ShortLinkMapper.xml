@@ -12,6 +12,7 @@
                group_id AS groupId,
                name,
                link_code AS linkCode,
+               code_type AS codeType,
                full_url AS fullUrl,
                sort_order AS sortOrder,
                domain_id AS domainId,
@@ -34,19 +35,34 @@
         )
     </select>
 
-    <insert id="insertIfIdempotencyAbsent">
+    <insert id="tryInsert">
         INSERT INTO t_link
-            (id, created_by_user_id, group_id, name, link_code, full_url,
+            (id, created_by_user_id, group_id, name, link_code, code_type, full_url,
              sort_order, domain_id, expires_at, idempotency_key,
              request_fingerprint, created_at, updated_at)
         VALUES
             (#{link.id}, #{link.createdByUserId}, #{link.groupId}, #{link.name},
-             #{link.linkCode}, #{link.fullUrl}, #{link.sortOrder}, #{link.domainId},
-             #{link.expiresAt}, #{link.idempotencyKey}, #{link.requestFingerprint},
-             #{link.createdAt}, #{link.createdAt})
-        ON CONFLICT (created_by_user_id, idempotency_key)
-            WHERE idempotency_key IS NOT NULL
-            DO NOTHING
+             #{link.linkCode}, #{link.codeType}, #{link.fullUrl}, #{link.sortOrder},
+             #{link.domainId}, #{link.expiresAt}, #{link.idempotencyKey},
+             #{link.requestFingerprint}, #{link.createdAt}, #{link.createdAt})
+        ON CONFLICT DO NOTHING
     </insert>
+
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM t_link
+            WHERE id = #{linkId}
+        )
+    </select>
+
+    <select id="existsByDomainAndCode" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM t_link
+            WHERE domain_id = #{domainId}
+              AND link_code = #{linkCode}
+        )
+    </select>
 
 </mapper>

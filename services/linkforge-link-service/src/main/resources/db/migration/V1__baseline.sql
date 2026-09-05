@@ -30,7 +30,8 @@ CREATE TABLE t_link
     created_by_user_id  uuid          NOT NULL,
     group_id            uuid          REFERENCES t_group (id) ON DELETE SET NULL,
     name                varchar(64)   NOT NULL,
-    link_code           varchar(64)   NOT NULL,
+    link_code           varchar(32)   NOT NULL,
+    code_type           varchar(16)   NOT NULL,
     full_url            varchar(2048) NOT NULL,
     sort_order          integer       NOT NULL DEFAULT 0,
     domain_id           uuid          NOT NULL REFERENCES t_domain_state (domain_id) ON DELETE RESTRICT,
@@ -44,6 +45,10 @@ CREATE TABLE t_link
     created_at          timestamptz   NOT NULL DEFAULT now(),
     updated_at          timestamptz   NOT NULL DEFAULT now(),
     CONSTRAINT uq_link_domain_code UNIQUE (domain_id, link_code),
+    CONSTRAINT ck_link_code CHECK (
+        (code_type = 'GENERATED' AND link_code ~ '^[0-9A-Za-z]{10}$')
+        OR (code_type = 'CUSTOM' AND link_code ~ '^[A-Za-z0-9_-]{4,32}$')
+    ),
     CONSTRAINT ck_link_status CHECK (status IN ('ACTIVE', 'DISABLED')),
     CONSTRAINT ck_link_disabled_reason CHECK (
         (status = 'ACTIVE' AND disabled_reason_code IS NULL)

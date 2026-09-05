@@ -4,6 +4,8 @@ import io.github.ranpers.linkforge.link.creation.application.IamAuthorizationUna
 import io.github.ranpers.linkforge.link.creation.application.IdempotencyConflictException;
 import io.github.ranpers.linkforge.link.creation.application.InvalidLinkGroupException;
 import io.github.ranpers.linkforge.link.creation.application.LinkCreationDeniedException;
+import io.github.ranpers.linkforge.link.creation.application.ShortCodeAllocationException;
+import io.github.ranpers.linkforge.link.creation.application.ShortCodeAlreadyExistsException;
 import io.github.ranpers.linkforge.link.creation.domain.InvalidShortLinkException;
 
 /**
@@ -16,11 +18,13 @@ public interface CreateShortLinkUseCase {
      *
      * @param command 已通过传输层基本校验的创建输入
      * @return 新创建或幂等重放的短链标识
-     * @throws InvalidShortLinkException 短码、目标地址或过期时间违反领域约束时
-     * @throws InvalidLinkGroupException 指定分组不属于操作者时
-     * @throws LinkCreationDeniedException IAM 明确拒绝创建时
+     * @throws InvalidShortLinkException            自定义短码、目标地址或过期时间违反领域约束时
+     * @throws InvalidLinkGroupException            指定分组不属于操作者时
+     * @throws LinkCreationDeniedException          IAM 明确拒绝创建时
      * @throws IamAuthorizationUnavailableException 无法获得 IAM 决策时
-     * @throws IdempotencyConflictException 同一幂等键已用于不同请求内容时
+     * @throws IdempotencyConflictException         同一幂等键已用于不同请求内容时
+     * @throws ShortCodeAlreadyExistsException      自定义短码已被同域名中的链接永久占用时
+     * @throws ShortCodeAllocationException         系统连续五次未能分配未占用的随机短码时
      */
     CreatedShortLink create(CreateShortLinkCommand command);
 }

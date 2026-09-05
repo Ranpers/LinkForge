@@ -2,6 +2,7 @@ package io.github.ranpers.linkforge.link.creation.adapter.in.web;
 
 import io.github.ranpers.linkforge.link.creation.application.port.in.CreateShortLinkCommand;
 import io.github.ranpers.linkforge.link.creation.application.port.in.CreateShortLinkUseCase;
+import io.github.ranpers.linkforge.link.creation.application.port.in.ShortCodeRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -22,6 +23,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/links")
 public class ShortLinkCreationController {
 
+    private static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
+
     private final CreateShortLinkUseCase createShortLink;
 
     public ShortLinkCreationController(CreateShortLinkUseCase createShortLink) {
@@ -32,7 +35,7 @@ public class ShortLinkCreationController {
     @ResponseStatus(HttpStatus.CREATED)
     public CreateShortLinkResponse create(
             JwtAuthenticationToken authentication,
-            @RequestHeader("Idempotency-Key")
+            @RequestHeader(IDEMPOTENCY_KEY_HEADER)
             @NotBlank @Size(max = 128) String idempotencyKey,
             @Valid @RequestBody CreateShortLinkRequest request
     ) {
@@ -42,7 +45,9 @@ public class ShortLinkCreationController {
                         actorUserId,
                         request.groupId(),
                         request.name(),
-                        request.linkCode(),
+                        request.linkCode() == null
+                                ? ShortCodeRequest.auto()
+                                : ShortCodeRequest.custom(request.linkCode()),
                         request.fullUrl(),
                         request.sortOrder(),
                         request.domainId(),

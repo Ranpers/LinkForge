@@ -5,14 +5,29 @@ import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
+/**
+ * 保证可持久化短链具备有效标识、公开短码、HTTP(S) 目标和幂等元数据。
+ *
+ * @param id                 非空的内部 UUIDv7 标识
+ * @param createdByUserId    非空的创建者标识，也是幂等键的作用域
+ * @param groupId            可为空的分组标识；非空时必须属于创建者
+ * @param name               去除首尾空白后非空且不超过 64 个字符的展示名称
+ * @param shortCode          非空且已按分配方式完成校验的公开短码
+ * @param fullUrl            非空且不超过 2048 个字符的绝对 HTTP(S) URL
+ * @param sortOrder          同组排序值，允许任意 32 位有符号整数
+ * @param domainId           非空的短链域名标识，也是短码唯一性的作用域
+ * @param expiresAt          可为空的带偏移量过期时刻；非空时必须晚于 {@code createdAt}
+ * @param idempotencyKey     创建者范围内非空且不超过 128 个字符的幂等键
+ * @param requestFingerprint 当前创建请求的 64 位小写 SHA-256 十六进制指纹
+ * @param createdAt          非空的带偏移量创建时刻
+ */
 public record ShortLink(
         UUID id,
         UUID createdByUserId,
         UUID groupId,
         String name,
-        String linkCode,
+        ShortCode shortCode,
         String fullUrl,
         int sortOrder,
         UUID domainId,
@@ -21,15 +36,13 @@ public record ShortLink(
         String requestFingerprint,
         OffsetDateTime createdAt
 ) {
-    private static final Pattern LINK_CODE = Pattern.compile("[A-Za-z0-9_-]{4,64}");
-
     public ShortLink {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(createdByUserId, "createdByUserId");
         Objects.requireNonNull(domainId, "domainId");
         Objects.requireNonNull(createdAt, "createdAt");
         name = requireText(name, "name", 64);
-        linkCode = requireLinkCode(linkCode);
+        Objects.requireNonNull(shortCode, "shortCode");
         fullUrl = requireHttpUrl(fullUrl);
         idempotencyKey = requireText(idempotencyKey, "idempotencyKey", 128);
         requestFingerprint = requireFingerprint(requestFingerprint);
@@ -45,16 +58,6 @@ public record ShortLink(
         String normalized = value.trim();
         if (normalized.length() > maxLength) {
             throw new InvalidShortLinkException(field + " 长度不能超过 " + maxLength);
-        }
-        return normalized;
-    }
-
-    private static String requireLinkCode(String value) {
-        String normalized = requireText(value, "linkCode", 64);
-        if (!LINK_CODE.matcher(normalized).matches()) {
-            throw new InvalidShortLinkException(
-                    "linkCode 只能包含字母、数字、下划线和连字符，长度为 4~64"
-            );
         }
         return normalized;
     }
@@ -79,5 +82,13 @@ public record ShortLink(
             throw new InvalidShortLinkException("requestFingerprint 必须是 SHA-256 十六进制值");
         }
         return value;
+    }
+
+    public String linkCode() {
+        return shortCode.value();
+    }
+
+    public ShortCodeType codeType() {
+        return shortCode.type();
     }
 }

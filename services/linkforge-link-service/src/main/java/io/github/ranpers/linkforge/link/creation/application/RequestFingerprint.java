@@ -1,6 +1,7 @@
 package io.github.ranpers.linkforge.link.creation.application;
 
 import io.github.ranpers.linkforge.link.creation.application.port.in.CreateShortLinkCommand;
+import io.github.ranpers.linkforge.link.creation.application.port.in.ShortCodeRequest;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +18,7 @@ final class RequestFingerprint {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             add(digest, command.groupId());
             add(digest, command.name());
-            add(digest, command.linkCode());
+            addShortCodeRequest(digest, command.shortCodeRequest());
             add(digest, command.fullUrl());
             add(digest, command.sortOrder());
             add(digest, command.domainId());
@@ -25,6 +26,19 @@ final class RequestFingerprint {
             return java.util.HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException exception) {
             throw new IllegalStateException("JVM 不支持 SHA-256", exception);
+        }
+    }
+
+    private static void addShortCodeRequest(
+            MessageDigest digest,
+            ShortCodeRequest request
+    ) {
+        switch (request) {
+            case ShortCodeRequest.Auto() -> add(digest, "AUTO");
+            case ShortCodeRequest.Custom custom -> {
+                add(digest, "CUSTOM");
+                add(digest, custom.shortCode().value());
+            }
         }
     }
 

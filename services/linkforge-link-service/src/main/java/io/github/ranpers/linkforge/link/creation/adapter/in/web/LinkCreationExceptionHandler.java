@@ -4,8 +4,9 @@ import io.github.ranpers.linkforge.link.creation.application.IamAuthorizationUna
 import io.github.ranpers.linkforge.link.creation.application.IdempotencyConflictException;
 import io.github.ranpers.linkforge.link.creation.application.InvalidLinkGroupException;
 import io.github.ranpers.linkforge.link.creation.application.LinkCreationDeniedException;
+import io.github.ranpers.linkforge.link.creation.application.ShortCodeAllocationException;
+import io.github.ranpers.linkforge.link.creation.application.ShortCodeAlreadyExistsException;
 import io.github.ranpers.linkforge.link.creation.domain.InvalidShortLinkException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,16 +40,28 @@ public class LinkCreationExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    ProblemDetail uniqueConflict(DataIntegrityViolationException exception) {
-        return ProblemDetail.forStatusAndDetail(
+    @ExceptionHandler(ShortCodeAlreadyExistsException.class)
+    ProblemDetail shortCodeAlreadyExists(ShortCodeAlreadyExistsException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT,
-                "同一域名下的短码已经存在"
+                exception.getMessage()
         );
+        detail.setProperty("code", "SHORT_CODE_ALREADY_EXISTS");
+        return detail;
+    }
+
+    @ExceptionHandler(ShortCodeAllocationException.class)
+    ProblemDetail shortCodeAllocationFailed(ShortCodeAllocationException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage()
+        );
+        detail.setProperty("code", "SHORT_CODE_ALLOCATION_FAILED");
+        return detail;
     }
 
     @ExceptionHandler(IamAuthorizationUnavailableException.class)
-    ProblemDetail iamUnavailable(IamAuthorizationUnavailableException exception) {
+    ProblemDetail iamUnavailable() {
         return ProblemDetail.forStatusAndDetail(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "IAM 当前不可用，已拒绝创建短链"

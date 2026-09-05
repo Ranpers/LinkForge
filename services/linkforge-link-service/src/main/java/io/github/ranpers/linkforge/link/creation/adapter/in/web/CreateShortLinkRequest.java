@@ -10,7 +10,7 @@ import java.util.UUID;
 public record CreateShortLinkRequest(
         UUID groupId,
         @NotBlank @Size(max = 64) String name,
-        @NotBlank @Size(min = 4, max = 64) String linkCode,
+        String linkCode,
         @NotBlank @Size(max = 2048) String fullUrl,
         int sortOrder,
         @NotNull UUID domainId,

@@ -131,9 +131,11 @@ CREATE TABLE t_user_link_security_restriction
     range_end   timestamptz,
     active      boolean      NOT NULL DEFAULT TRUE,
     reason_code varchar(64)  NOT NULL,
+    source      varchar(32)  NOT NULL,
     created_at  timestamptz  NOT NULL DEFAULT now(),
     revoked_at  timestamptz,
     CONSTRAINT ck_link_security_mode CHECK (mode IN ('ALL', 'CREATED_DURING')),
+    CONSTRAINT ck_link_security_source CHECK (source IN ('MANUAL', 'ACCOUNT_SUSPENSION')),
     CONSTRAINT ck_link_security_range CHECK (
         (mode = 'ALL' AND range_start IS NULL AND range_end IS NULL)
         OR (mode = 'CREATED_DURING' AND (range_start IS NOT NULL OR range_end IS NOT NULL)
@@ -146,6 +148,9 @@ CREATE TABLE t_user_link_security_restriction
 CREATE INDEX idx_user_link_security_active
     ON t_user_link_security_restriction (user_id, created_at)
     WHERE active;
+CREATE UNIQUE INDEX uq_active_account_suspension_restriction
+    ON t_user_link_security_restriction (user_id, source)
+    WHERE active AND source = 'ACCOUNT_SUSPENSION';
 
 CREATE TABLE t_authorization_jwk
 (

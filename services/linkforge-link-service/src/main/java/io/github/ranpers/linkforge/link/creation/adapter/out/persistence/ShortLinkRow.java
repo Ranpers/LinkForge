@@ -1,5 +1,7 @@
 package io.github.ranpers.linkforge.link.creation.adapter.out.persistence;
 
+import io.github.ranpers.linkforge.link.creation.domain.ShortCodeType;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -9,6 +11,7 @@ public record ShortLinkRow(
         UUID groupId,
         String name,
         String linkCode,
+        ShortCodeType codeType,
         String fullUrl,
         int sortOrder,
         UUID domainId,

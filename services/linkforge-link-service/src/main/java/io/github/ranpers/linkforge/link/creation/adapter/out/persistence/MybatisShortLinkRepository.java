@@ -1,6 +1,7 @@
 package io.github.ranpers.linkforge.link.creation.adapter.out.persistence;
 
 import io.github.ranpers.linkforge.link.creation.application.port.out.ShortLinkRepository;
+import io.github.ranpers.linkforge.link.creation.domain.ShortCode;
 import io.github.ranpers.linkforge.link.creation.domain.ShortLink;
 import org.springframework.stereotype.Repository;
 
@@ -28,8 +29,18 @@ public class MybatisShortLinkRepository implements ShortLinkRepository {
     }
 
     @Override
-    public boolean insertIfIdempotencyAbsent(ShortLink link) {
-        return mapper.insertIfIdempotencyAbsent(link) == 1;
+    public boolean tryInsert(ShortLink link) {
+        return mapper.tryInsert(link) == 1;
+    }
+
+    @Override
+    public boolean existsById(UUID linkId) {
+        return mapper.existsById(linkId);
+    }
+
+    @Override
+    public boolean existsByDomainAndCode(UUID domainId, ShortCode shortCode) {
+        return mapper.existsByDomainAndCode(domainId, shortCode.value());
     }
 
     private static ShortLink toDomain(ShortLinkRow row) {
@@ -38,7 +49,7 @@ public class MybatisShortLinkRepository implements ShortLinkRepository {
                 row.createdByUserId(),
                 row.groupId(),
                 row.name(),
-                row.linkCode(),
+                new ShortCode(row.linkCode(), row.codeType()),
                 row.fullUrl(),
                 row.sortOrder(),
                 row.domainId(),
