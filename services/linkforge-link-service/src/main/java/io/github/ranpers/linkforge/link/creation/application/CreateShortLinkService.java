@@ -4,46 +4,37 @@ import io.github.ranpers.linkforge.link.creation.application.port.in.CreateShort
 import io.github.ranpers.linkforge.link.creation.application.port.in.CreateShortLinkUseCase;
 import io.github.ranpers.linkforge.link.creation.application.port.in.CreatedShortLink;
 import io.github.ranpers.linkforge.link.creation.application.port.out.IamAuthorizationGateway;
-import io.github.ranpers.linkforge.link.creation.application.port.out.ShortLinkIdGenerator;
-import io.github.ranpers.linkforge.link.creation.application.port.out.ShortLinkRepository;
-import io.github.ranpers.linkforge.link.creation.domain.ShortLink;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Objects;
 
 @Service
 public class CreateShortLinkService implements CreateShortLinkUseCase {
 
     private final IamAuthorizationGateway authorizationGateway;
-    private final ShortLinkRepository repository;
-    private final ShortLinkIdGenerator idGenerator;
+    private final CreateShortLinkTransaction transaction;
 
     public CreateShortLinkService(
             IamAuthorizationGateway authorizationGateway,
-            ShortLinkRepository repository,
-            ShortLinkIdGenerator idGenerator
+            CreateShortLinkTransaction transaction
     ) {
         this.authorizationGateway = authorizationGateway;
-        this.repository = repository;
-        this.idGenerator = idGenerator;
+        this.transaction = transaction;
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public CreatedShortLink create(CreateShortLinkCommand command) {
         Objects.requireNonNull(command, "command");
         String fingerprint = RequestFingerprint.of(command);
-        var existing = repository.findByIdempotencyKey(
-                command.actorUserId(), command.idempotencyKey()
-        );
-        if (existing.isPresent()) {
-            return resolveReplay(existing.get(), fingerprint);
+        var replay = transaction.findReplay(command, fingerprint);
+        if (replay.isPresent()) {
+            return replay.get();
         }
         if (command.groupId() != null
-                && !repository.groupBelongsToUser(command.groupId(), command.actorUserId())) {
+                && !transaction.groupBelongsToUser(command.groupId(), command.actorUserId())) {
             throw new InvalidLinkGroupException();
         }
 
@@ -56,37 +47,6 @@ public class CreateShortLinkService implements CreateShortLinkUseCase {
             );
         }
 
-        ShortLink link = new ShortLink(
-                idGenerator.nextId(),
-                command.actorUserId(),
-                command.groupId(),
-                command.name(),
-                command.linkCode(),
-                command.fullUrl(),
-                command.sortOrder(),
-                command.domainId(),
-                command.expiresAt(),
-                command.idempotencyKey(),
-                fingerprint,
-                OffsetDateTime.now(ZoneOffset.UTC)
-        );
-        if (repository.insertIfIdempotencyAbsent(link)) {
-            return CreatedShortLink.from(link);
-        }
-        return resolveReplay(
-                repository.findByIdempotencyKey(
-                                command.actorUserId(), command.idempotencyKey())
-                        .orElseThrow(() -> new IllegalStateException(
-                                "幂等约束冲突后未找到原创建结果"
-                        )),
-                fingerprint
-        );
-    }
-
-    private static CreatedShortLink resolveReplay(ShortLink existing, String fingerprint) {
-        if (!existing.requestFingerprint().equals(fingerprint)) {
-            throw new IdempotencyConflictException();
-        }
-        return CreatedShortLink.from(existing);
+        return transaction.createAuthorized(command, fingerprint);
     }
 }

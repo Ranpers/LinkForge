@@ -5,10 +5,13 @@ import io.github.ranpers.linkforge.link.management.application.port.out.LinkMana
 import io.github.ranpers.linkforge.link.management.application.port.out.LinkManagementRepository;
 import io.github.ranpers.linkforge.link.management.application.port.out.LinkManagementSnapshot;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -21,8 +24,10 @@ class ManageShortLinkServiceTest {
     private final LinkManagementAuthorizationGateway authorization =
             mock(LinkManagementAuthorizationGateway.class);
     private final LinkManagementCache cache = mock(LinkManagementCache.class);
+    private final ManageShortLinkTransaction transaction =
+            new ManageShortLinkTransaction(repository, cache);
     private final ManageShortLinkService service =
-            new ManageShortLinkService(repository, authorization, cache);
+            new ManageShortLinkService(authorization, transaction);
     private final UUID actor = UUID.randomUUID();
     private final UUID linkId = UUID.randomUUID();
     private final UUID domainId = UUID.randomUUID();
@@ -78,6 +83,26 @@ class ManageShortLinkServiceTest {
                 LinkStateConflictException.class,
                 () -> service.changeAvailability(actor, linkId, true)
         );
+    }
+
+    @Test
+    void suspendsAnyCallerTransactionAroundRemoteAuthorization() throws NoSuchMethodException {
+        assertNonTransactionalOrchestration(
+                "updateTarget", UUID.class, UUID.class, String.class);
+        assertNonTransactionalOrchestration(
+                "changeAvailability", UUID.class, UUID.class, boolean.class);
+        assertNonTransactionalOrchestration(
+                "delete", UUID.class, UUID.class);
+    }
+
+    private static void assertNonTransactionalOrchestration(
+            String methodName,
+            Class<?>... parameterTypes
+    ) throws NoSuchMethodException {
+        Transactional boundary = ManageShortLinkService.class
+                .getMethod(methodName, parameterTypes)
+                .getAnnotation(Transactional.class);
+        assertEquals(Propagation.NOT_SUPPORTED, boundary.propagation(), methodName);
     }
 
     private static LinkManagementAuthorization allowed() {
