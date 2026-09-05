@@ -6,6 +6,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,12 +28,14 @@ public class UserSecurityStatusController {
     public void change(
             JwtAuthenticationToken authentication,
             @PathVariable UUID userId,
-            @RequestBody ChangeUserSecurityStatusRequest request
+            @RequestBody ChangeUserSecurityStatusRequest request,
+            @RequestHeader(value = "X-Trace-Id", required = false) String traceId
     ) {
         securityStatus.change(
                 UUID.fromString(authentication.getToken().getSubject()),
                 userId,
-                request.suspended()
+                request.suspended(),
+                traceId
         );
     }
 }

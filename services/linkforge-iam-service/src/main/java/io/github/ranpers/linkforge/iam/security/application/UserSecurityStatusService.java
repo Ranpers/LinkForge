@@ -18,8 +18,8 @@ public class UserSecurityStatusService implements ChangeUserSecurityStatusUseCas
 
     @Override
     @Transactional
-    public void change(UUID actorUserId, UUID targetUserId, boolean suspended) {
-        switch (store.change(actorUserId, targetUserId, suspended)) {
+    public void change(UUID actorUserId, UUID targetUserId, boolean suspended, String traceId) {
+        switch (store.change(actorUserId, targetUserId, suspended, traceId)) {
             case CHANGED, UNCHANGED -> {
             }
             case TARGET_NOT_FOUND -> throw new SecurityTargetUserNotFoundException();

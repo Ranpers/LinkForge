@@ -12,4 +12,8 @@ public interface UserSecurityStatusMapper {
             @Param("targetUserId") UUID targetUserId,
             @Param("suspended") boolean suspended
     );
+
+    int activateAccountSuspensionRestriction(@Param("targetUserId") UUID targetUserId);
+
+    int revokeAccountSuspensionRestriction(@Param("targetUserId") UUID targetUserId);
 }

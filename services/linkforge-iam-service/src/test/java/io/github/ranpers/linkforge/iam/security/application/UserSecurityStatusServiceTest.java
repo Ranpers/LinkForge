@@ -19,23 +19,23 @@ class UserSecurityStatusServiceTest {
 
     @Test
     void acceptsChangedAndIdempotentStatus() {
-        when(store.change(actor, target, true))
+        when(store.change(actor, target, true, "trace"))
                 .thenReturn(UserSecurityStatusStore.ChangeOutcome.CHANGED);
-        when(store.change(actor, target, false))
+        when(store.change(actor, target, false, "trace"))
                 .thenReturn(UserSecurityStatusStore.ChangeOutcome.UNCHANGED);
 
-        assertDoesNotThrow(() -> service.change(actor, target, true));
-        assertDoesNotThrow(() -> service.change(actor, target, false));
+        assertDoesNotThrow(() -> service.change(actor, target, true, "trace"));
+        assertDoesNotThrow(() -> service.change(actor, target, false, "trace"));
     }
 
     @Test
     void cannotUseSecurityUnfreezeToReactivateDeactivatedUser() {
-        when(store.change(actor, target, false))
+        when(store.change(actor, target, false, "trace"))
                 .thenReturn(UserSecurityStatusStore.ChangeOutcome.LIFECYCLE_CONFLICT);
 
         assertThrows(
                 UserSecurityStatusConflictException.class,
-                () -> service.change(actor, target, false)
+                () -> service.change(actor, target, false, "trace")
         );
     }
 }

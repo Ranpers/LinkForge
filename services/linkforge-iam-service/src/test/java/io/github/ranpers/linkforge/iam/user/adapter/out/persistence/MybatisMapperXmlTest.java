@@ -62,6 +62,8 @@ class MybatisMapperXmlTest {
                 "io.github.ranpers.linkforge.iam.security.adapter.out.persistence.UserSecurityStatusMapper";
 
         assertTrue(configuration.hasStatement(namespace + ".change"));
+        assertTrue(configuration.hasStatement(namespace + ".activateAccountSuspensionRestriction"));
+        assertTrue(configuration.hasStatement(namespace + ".revokeAccountSuspensionRestriction"));
     }
 
     @Test

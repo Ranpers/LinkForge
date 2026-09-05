@@ -31,14 +31,15 @@
 
     <select id="insertRestriction" resultType="java.util.UUID">
         INSERT INTO t_user_link_security_restriction
-            (id, user_id, mode, range_start, range_end, reason_code)
+            (id, user_id, mode, range_start, range_end, reason_code, source)
         VALUES (
             uuidv7(),
             #{targetUserId},
             #{mode},
             #{rangeStart},
             #{rangeEnd},
-            #{reasonCode}
+            #{reasonCode},
+            'MANUAL'
         )
         RETURNING id
     </select>
@@ -48,6 +49,7 @@
         FROM t_user_link_security_restriction
         WHERE id = #{restrictionId}
           AND user_id = #{targetUserId}
+          AND source = 'MANUAL'
     </select>
 
     <update id="revokeRestriction">
@@ -56,6 +58,7 @@
             revoked_at = now()
         WHERE id = #{restrictionId}
           AND user_id = #{targetUserId}
+          AND source = 'MANUAL'
           AND active
     </update>
 

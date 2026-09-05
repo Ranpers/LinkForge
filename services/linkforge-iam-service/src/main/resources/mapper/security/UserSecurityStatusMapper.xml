@@ -26,6 +26,8 @@
             FROM t_user
             WHERE id = #{targetUserId}
               AND deleted_at IS NULL
+              AND (SELECT allowed FROM actor_allowed)
+            FOR UPDATE
         ),
         changed AS (
             UPDATE t_user
@@ -48,5 +50,30 @@
                    ELSE 3
                END
     </select>
+
+    <insert id="activateAccountSuspensionRestriction">
+        INSERT INTO t_user_link_security_restriction
+            (id, user_id, mode, active, reason_code, source)
+        SELECT uuidv7(),
+               #{targetUserId},
+               'ALL',
+               TRUE,
+               'ACCOUNT_SECURITY_SUSPENDED',
+               'ACCOUNT_SUSPENSION'
+        FROM t_user
+        WHERE id = #{targetUserId}
+          AND status = 2
+          AND deleted_at IS NULL
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <update id="revokeAccountSuspensionRestriction">
+        UPDATE t_user_link_security_restriction
+        SET active = FALSE,
+            revoked_at = now()
+        WHERE user_id = #{targetUserId}
+          AND source = 'ACCOUNT_SUSPENSION'
+          AND active
+    </update>
 
 </mapper>

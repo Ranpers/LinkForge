@@ -22,7 +22,9 @@ public interface ManageLinkSecurityRestrictionUseCase {
     UUID create(CreateLinkSecurityRestrictionCommand command);
 
     /**
-     * 撤销一条活动限制；重复撤销视为成功。
+     * 撤销一条由管理员创建的活动限制；重复撤销视为成功。
+     *
+     * @apiNote 用户冻结流程生成的系统限制不属于本接口的管理范围，只能通过解除用户冻结撤销
      *
      * @param actorUserId 执行安全处置的用户
      * @param targetUserId 限制所作用的短链创建者
