@@ -76,13 +76,13 @@ docker compose --env-file deploy/compose/.env -f deploy/compose/docker-compose.y
 
 主要入口：
 
-| 地址 | 用途 |
-| --- | --- |
-| `http://localhost:8080` | Gateway 统一入口 |
-| `http://localhost:9000` | IAM 服务（本地诊断） |
-| `http://localhost:9002` | Link 服务（本地诊断） |
-| `http://localhost:18080` | Nacos 控制台 |
-| `http://localhost:3000` | Grafana（Trace/Metric/Log） |
+| 地址                     | 用途                        |
+|--------------------------|-----------------------------|
+| `http://localhost:8080`  | Gateway 统一入口            |
+| `http://localhost:9000`  | IAM 服务（本地诊断）        |
+| `http://localhost:9002`  | Link 服务（本地诊断）       |
+| `http://localhost:18080` | Nacos 控制台                |
+| `http://localhost:3000`  | Grafana（Trace/Metric/Log） |
 
 检查容器和就绪状态：
 

@@ -6,12 +6,12 @@
 
 Gateway 只暴露明确的公共接口：
 
-| 路由 | 下游服务 | 接口范围 | 认证 |
-| --- | --- | --- | --- |
-| `iam-authentication` | `linkforge-iam-service` | 注册、OAuth2、OIDC、登录 | 按协议公开 |
-| `iam-api` | `linkforge-iam-service` | 用户与域名管理 | JWT |
-| `link-api` | `linkforge-link-service` | 链接与分组管理 | JWT |
-| `link-redirect` | `linkforge-link-service` | `/r/**` | 公开 |
+| 路由                 | 下游服务                 | 接口范围                 | 认证       |
+|----------------------|--------------------------|--------------------------|------------|
+| `iam-authentication` | `linkforge-iam-service`  | 注册、OAuth2、OIDC、登录 | 按协议公开 |
+| `iam-api`            | `linkforge-iam-service`  | 用户与域名管理           | JWT        |
+| `link-api`           | `linkforge-link-service` | 链接与分组管理           | JWT        |
+| `link-redirect`      | `linkforge-link-service` | `/r/**`                  | 公开       |
 
 `/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。认证、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。
 
@@ -53,12 +53,12 @@ Kafka 使用两套监听地址：
 
 关键开关：
 
-| 环境变量 | 默认值 | 说明 |
-| --- | --- | --- |
-| `OTEL_TRACES_ENABLED` | `false` | 是否导出 Trace |
-| `OTEL_TRACES_SAMPLING_PROBABILITY` | `1.0` | 采样概率，范围 0 到 1 |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318/v1/traces` | Trace OTLP/HTTP 地址 |
-| `OTEL_METRICS_ENABLED` | `false` | 是否启用 OTLP Metrics 导出 |
+| 环境变量                           | 默认值                            | 说明                       |
+|------------------------------------|-----------------------------------|----------------------------|
+| `OTEL_TRACES_ENABLED`              | `false`                           | 是否导出 Trace             |
+| `OTEL_TRACES_SAMPLING_PROBABILITY` | `1.0`                             | 采样概率，范围 0 到 1      |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`      | `http://localhost:4318/v1/traces` | Trace OTLP/HTTP 地址       |
+| `OTEL_METRICS_ENABLED`             | `false`                           | 是否启用 OTLP Metrics 导出 |
 
 本地运行默认关闭 Trace 和 Metrics 导出，避免在 Collector 不存在时产生后台重试。完整 Compose Profile 显式启用 Trace；指标继续由应用 Actuator 暴露策略决定。
 
