@@ -35,14 +35,28 @@
         )
     </select>
 
+    <!--
+      插入短链。分组归属校验放在语句内部，避免"先查后插"之间分组被并发软删的窗口。
+
+      requested_group 把可空的 groupId 收敛成一个带类型的列：直接写 #{...} IS NULL
+      会生成裸的 "$n IS NULL"，PostgreSQL 无从推断参数类型而报
+      "could not determine data type of parameter"，必须以 CAST 或列引用给出上下文。
+      eligible_group 在 FOR SHARE 锁下确认分组仍属于该用户且未软删。
+
+      分组为 NULL 时不作约束；分组存在但不属于该用户或已软删时一行都不插，
+      由调用方据 existsById 判定失败原因。
+    -->
     <insert id="tryInsert">
-        WITH eligible_group AS (
-            SELECT id
-            FROM t_group
-            WHERE id = #{link.groupId,jdbcType=OTHER}
-              AND user_id = #{link.createdByUserId}
-              AND deleted_at IS NULL
-            FOR SHARE
+        WITH requested_group AS MATERIALIZED (
+            SELECT CAST(#{link.groupId,jdbcType=OTHER} AS uuid) AS id
+        ),
+        eligible_group AS (
+            SELECT candidate.id
+            FROM t_group candidate
+                     JOIN requested_group requested ON candidate.id = requested.id
+            WHERE candidate.user_id = #{link.createdByUserId}
+              AND candidate.deleted_at IS NULL
+            FOR SHARE OF candidate
         )
         INSERT INTO t_link
             (id, created_by_user_id, group_id, name, link_code, code_type, full_url,
@@ -50,7 +64,7 @@
              request_fingerprint, created_at, updated_at)
         SELECT #{link.id},
                #{link.createdByUserId},
-               #{link.groupId,jdbcType=OTHER},
+               requested.id,
                #{link.name},
                #{link.linkCode},
                #{link.codeType},
@@ -62,7 +76,8 @@
                #{link.requestFingerprint},
                #{link.createdAt},
                #{link.createdAt}
-        WHERE #{link.groupId,jdbcType=OTHER} IS NULL
+        FROM requested_group requested
+        WHERE requested.id IS NULL
            OR EXISTS (SELECT 1 FROM eligible_group)
         ON CONFLICT DO NOTHING
     </insert>
