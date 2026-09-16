@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.user.adapter.out.persistence.query.UserListMapper">
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.iam.user.application.port.in.UserListItem">
+        SELECT id,
+               username,
+               email,
+               real_name AS realName,
+               CASE status
+                   WHEN 0 THEN 'DEACTIVATED'
+                   WHEN 1 THEN 'ACTIVE'
+                   WHEN 2 THEN 'SECURITY_SUSPENDED'
+               END AS status,
+               created_at AS createdAt,
+               updated_at AS updatedAt
+        FROM t_user
+        WHERE deleted_at IS NULL
+        <if test="criteria.status != null">
+            AND status = #{criteria.status}
+        </if>
+        <if test="criteria.searchTerm != null">
+            AND (
+                POSITION(lower(#{criteria.searchTerm}) IN lower(username)) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(COALESCE(email, ''))) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(COALESCE(real_name, ''))) > 0
+            )
+        </if>
+        <if test="criteria.cursorCreatedAt != null">
+            AND (created_at, id) &lt; (#{criteria.cursorCreatedAt}, #{criteria.cursorId})
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{criteria.fetchSize}
+    </select>
+
+</mapper>

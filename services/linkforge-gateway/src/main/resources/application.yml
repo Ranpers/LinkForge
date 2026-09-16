@@ -1,0 +1,94 @@
+server:
+  port: 8080
+  forward-headers-strategy: none
+
+spring:
+  application:
+    name: linkforge-gateway
+
+  config:
+    import:
+      - optional:nacos:linkforge-common-${LINKFORGE_ENV:local}.yaml?group=${NACOS_CONFIG_GROUP:LINKFORGE}&refreshEnabled=true
+      - optional:nacos:${spring.application.name}-${LINKFORGE_ENV:local}.yaml?group=${NACOS_CONFIG_GROUP:LINKFORGE}&refreshEnabled=true
+
+  cloud:
+    nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        enabled: ${NACOS_ENABLED:false}
+        register-enabled: ${NACOS_ENABLED:false}
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_DISCOVERY_GROUP:LINKFORGE}
+        ip-type: IPv4
+      config:
+        enabled: ${NACOS_CONFIG_ENABLED:false}
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_CONFIG_GROUP:LINKFORGE}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:1s}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${IAM_ISSUER:http://127.0.0.1:8080}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://127.0.0.1:9000/oauth2/jwks}
+          audiences:
+            - ${IAM_API_AUDIENCE:linkforge-api}
+
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTEL_METRICS_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLING_PROBABILITY:1.0}
+    export:
+      otlp:
+        enabled: ${OTEL_TRACES_ENABLED:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+  include-application-name: false
+
+linkforge:
+  gateway:
+    cors:
+      allowed-origins:
+        - ${SPA_ALLOWED_ORIGIN:http://127.0.0.1:5173}
+        - ${SPA_LOCALHOST_ALLOWED_ORIGIN:http://localhost:5173}
+    rate-limit:
+      authentication:
+        replenish-rate: ${AUTH_RATE_REPLENISH:10}
+        burst-capacity: ${AUTH_RATE_BURST:20}
+      api:
+        replenish-rate: ${API_RATE_REPLENISH:30}
+        burst-capacity: ${API_RATE_BURST:60}
+      redirect:
+        replenish-rate: ${REDIRECT_RATE_REPLENISH:100}
+        burst-capacity: ${REDIRECT_RATE_BURST:200}

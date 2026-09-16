@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.domain.adapter.out.persistence.query.DomainListMapper">
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.iam.domain.application.port.in.DomainListItem">
+        SELECT domain_row.id,
+               domain_row.domain,
+               domain_row.name,
+               domain_row.status = 1 AS enabled,
+               domain_row.state_revision AS revision,
+               domain_row.created_at AS createdAt,
+               domain_row.updated_at AS updatedAt
+        FROM t_domain domain_row
+        WHERE (
+            #{criteria.canReadAll}
+            OR EXISTS (
+                SELECT 1 FROM t_user_domain direct_grant
+                WHERE direct_grant.user_id = #{criteria.actorUserId}
+                  AND direct_grant.domain_id = domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_role user_role
+                JOIN t_role_domain role_grant ON role_grant.role_id = user_role.role_id
+                WHERE user_role.user_id = #{criteria.actorUserId}
+                  AND role_grant.domain_id = domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_domain_group user_group
+                JOIN t_domain_group_domain group_domain
+                  ON group_domain.domain_group_id = user_group.domain_group_id
+                WHERE user_group.user_id = #{criteria.actorUserId}
+                  AND group_domain.domain_id = domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_role user_role
+                JOIN t_role_domain_group role_group ON role_group.role_id = user_role.role_id
+                JOIN t_domain_group_domain group_domain
+                  ON group_domain.domain_group_id = role_group.domain_group_id
+                WHERE user_role.user_id = #{criteria.actorUserId}
+                  AND group_domain.domain_id = domain_row.id
+            )
+        )
+        <if test="criteria.enabled != null">
+            AND domain_row.status = CASE WHEN #{criteria.enabled} THEN 1 ELSE 0 END
+        </if>
+        <if test="criteria.searchTerm != null">
+            AND (
+                POSITION(lower(#{criteria.searchTerm}) IN lower(domain_row.domain)) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(COALESCE(domain_row.name, ''))) > 0
+            )
+        </if>
+        <if test="criteria.cursorCreatedAt != null">
+            AND (domain_row.created_at, domain_row.id)
+                &lt; (#{criteria.cursorCreatedAt}, #{criteria.cursorId})
+        </if>
+        ORDER BY domain_row.created_at DESC, domain_row.id DESC
+        LIMIT #{criteria.fetchSize}
+    </select>
+
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.control.adapter.out.persistence.LinkControlEventMapper">
+
+    <insert id="insertInbox">
+        INSERT INTO t_inbox_event
+            (event_id, event_type, schema_version, stream_key, trace_id)
+        VALUES
+            (#{eventId}, #{eventType}, #{schemaVersion}, #{streamKey}, #{traceId})
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <insert id="insertCheckpointIfAbsent">
+        INSERT INTO t_stream_checkpoint (stream_key, last_applied_revision)
+        VALUES (#{streamKey}, 0)
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <select id="lockCheckpoint" resultType="long">
+        SELECT last_applied_revision
+        FROM t_stream_checkpoint
+        WHERE stream_key = #{streamKey}
+        FOR UPDATE
+    </select>
+
+    <update id="advanceCheckpoint">
+        UPDATE t_stream_checkpoint
+        SET last_applied_revision = #{revision},
+            updated_at = now()
+        WHERE stream_key = #{streamKey}
+          AND last_applied_revision &lt; #{revision}
+    </update>
+
+    <insert id="upsertDomainState">
+        INSERT INTO t_domain_state (domain_id, host, enabled, revision)
+        VALUES (#{domainId}, #{host}, #{enabled}, #{revision})
+        ON CONFLICT (domain_id) DO UPDATE
+        SET host = EXCLUDED.host,
+            enabled = EXCLUDED.enabled,
+            revision = EXCLUDED.revision,
+            updated_at = now()
+        WHERE t_domain_state.revision &lt; EXCLUDED.revision
+    </insert>
+
+    <delete id="deleteUserRestrictions">
+        DELETE FROM t_user_link_security_restriction
+        WHERE user_id = #{userId}
+    </delete>
+
+    <insert id="insertUserRestrictions">
+        INSERT INTO t_user_link_security_restriction
+            (restriction_id, user_id, mode, range_start, range_end,
+             reason_code, created_at, source_revision)
+        VALUES
+        <foreach collection="restrictions" item="restriction" separator=",">
+            (#{restriction.restrictionId}, #{userId}, #{restriction.mode},
+             #{restriction.rangeStart}, #{restriction.rangeEnd},
+             #{restriction.reasonCode}, #{restriction.createdAt}, #{revision})
+        </foreach>
+    </insert>
+
+</mapper>

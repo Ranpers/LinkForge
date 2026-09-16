@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.group.adapter.out.persistence.GroupMapper">
+
+    <select id="insert"
+            resultType="java.util.UUID"
+            affectData="true"
+            flushCache="true"
+            useCache="false">
+        INSERT INTO t_group (user_id, name, sort_order)
+        VALUES (#{userId}, #{name}, #{sortOrder})
+        ON CONFLICT (user_id, name) WHERE deleted_at IS NULL DO NOTHING
+        RETURNING id
+    </select>
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.link.group.application.port.in.GroupView">
+        SELECT id,
+               name,
+               sort_order AS sortOrder,
+               created_at AS createdAt,
+               updated_at AS updatedAt
+        FROM t_group
+        WHERE id = #{groupId}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="update"
+            resultType="integer"
+            affectData="true"
+            flushCache="true"
+            useCache="false">
+        WITH conflict AS (
+            SELECT 1
+            FROM t_group
+            WHERE user_id = #{userId}
+              AND name = #{name}
+              AND deleted_at IS NULL
+              AND id &lt;&gt; #{groupId}
+        ),
+        updated AS (
+            UPDATE t_group
+            SET name = #{name},
+                sort_order = COALESCE(#{sortOrder,jdbcType=INTEGER}, sort_order),
+                updated_at = now()
+            WHERE id = #{groupId}
+              AND user_id = #{userId}
+              AND deleted_at IS NULL
+              AND NOT EXISTS (SELECT 1 FROM conflict)
+            RETURNING id
+        )
+        SELECT CASE
+                   WHEN EXISTS (SELECT 1 FROM conflict) THEN 0
+                   WHEN EXISTS (SELECT 1 FROM updated) THEN 1
+                   ELSE 2
+               END
+    </select>
+
+    <select id="lockActiveOwned" resultType="java.util.UUID" useCache="false">
+        SELECT id
+        FROM t_group
+        WHERE id = #{groupId}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
+    <select id="softDelete"
+            resultType="integer"
+            affectData="true"
+            flushCache="true"
+            useCache="false">
+        WITH removed AS (
+            UPDATE t_group
+            SET deleted_at = now(),
+                updated_at = now()
+            WHERE id = #{groupId}
+              AND user_id = #{userId}
+              AND deleted_at IS NULL
+            RETURNING id
+        ),
+        detached AS (
+            UPDATE t_link
+            SET group_id = NULL,
+                revision = revision + 1,
+                updated_at = now()
+            WHERE group_id = #{groupId}
+              AND created_by_user_id = #{userId}
+              AND deleted_at IS NULL
+              AND EXISTS (SELECT 1 FROM removed)
+            RETURNING id
+        )
+        SELECT COUNT(*) FROM removed
+    </select>
+
+</mapper>

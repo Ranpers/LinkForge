@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.query.adapter.out.persistence.ShortLinkListMapper">
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.link.query.application.port.in.ShortLinkListItem">
+        SELECT id,
+               created_by_user_id AS createdByUserId,
+               group_id AS groupId,
+               name,
+               link_code AS linkCode,
+               code_type AS codeType,
+               full_url AS fullUrl,
+               sort_order AS sortOrder,
+               domain_id AS domainId,
+               status,
+               disabled_reason_code AS disabledReasonCode,
+               expires_at AS expiresAt,
+               revision,
+               created_at AS createdAt,
+               updated_at AS updatedAt
+        FROM t_link
+        WHERE deleted_at IS NULL
+        <if test="criteria.createdByUserId != null">
+            AND created_by_user_id = #{criteria.createdByUserId}
+        </if>
+        <if test="criteria.domainId != null">
+            AND domain_id = #{criteria.domainId}
+        </if>
+        <if test="criteria.status != null">
+            AND status = #{criteria.status}
+        </if>
+        <if test="criteria.searchTerm != null">
+            AND (
+                POSITION(lower(#{criteria.searchTerm}) IN lower(name)) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(link_code)) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(full_url)) > 0
+            )
+        </if>
+        <if test="criteria.cursorCreatedAt != null">
+            AND (created_at, id) &lt; (#{criteria.cursorCreatedAt}, #{criteria.cursorId})
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{criteria.fetchSize}
+    </select>
+
+</mapper>

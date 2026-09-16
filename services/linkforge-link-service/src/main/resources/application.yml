@@ -1,0 +1,142 @@
+server:
+  port: 9002
+
+spring:
+  application:
+    name: linkforge-link-service
+
+  config:
+    import:
+      - optional:nacos:linkforge-common-${LINKFORGE_ENV:local}.yaml?group=${NACOS_CONFIG_GROUP:LINKFORGE}&refreshEnabled=true
+      - optional:nacos:${spring.application.name}-${LINKFORGE_ENV:local}.yaml?group=${NACOS_CONFIG_GROUP:LINKFORGE}&refreshEnabled=true
+
+  cloud:
+    nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        enabled: ${NACOS_ENABLED:false}
+        register-enabled: ${NACOS_ENABLED:false}
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_DISCOVERY_GROUP:LINKFORGE}
+        ip-type: IPv4
+      config:
+        enabled: ${NACOS_CONFIG_ENABLED:false}
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: ${NACOS_CONFIG_GROUP:LINKFORGE}
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_LINK_PORT:5433}/${POSTGRES_LINK_DB:shortlink_link}
+    username: ${POSTGRES_USER:shortlink}
+    password: ${POSTGRES_PASSWORD:change-me-pg}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:1s}
+
+  flyway:
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${LINK_CONTROL_CONSUMER_GROUP_ID:linkforge-link-control-v1}
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        isolation.level: read_committed
+    producer:
+      # 仅供不可恢复消息投递到 DLT；正常控制事件由 IAM 生产。
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+    listener:
+      # 数据库事务提交后监听方法才返回；崩溃导致的重复由 Inbox 消化。
+      ack-mode: record
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${IAM_ISSUER:http://127.0.0.1:8080}
+          jwk-set-uri: ${IAM_JWK_SET_URI:http://127.0.0.1:9000/oauth2/jwks}
+          audiences:
+            - ${IAM_API_AUDIENCE:linkforge-api}
+      client:
+        provider:
+          iam:
+            token-uri: ${IAM_TOKEN_URI:http://127.0.0.1:9000/oauth2/token}
+        registration:
+          iam-internal:
+            provider: iam
+            client-id: ${IAM_LINK_CLIENT_ID:linkforge-link-service}
+            client-secret: ${IAM_LINK_CLIENT_SECRET}
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: client_credentials
+            scope:
+              - internal.authorization.read
+
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: ${OTEL_METRICS_ENABLED:false}
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: ${OTEL_TRACES_SAMPLING_PROBABILITY:1.0}
+    export:
+      otlp:
+        enabled: ${OTEL_TRACES_ENABLED:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+  include-application-name: false
+
+mybatis-flex:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-handlers-package: io.github.ranpers.linkforge.link.infrastructure.persistence.mybatis
+
+linkforge:
+  iam-client:
+    base-url: ${IAM_BASE_URL:http://127.0.0.1:9000}
+    registration-id: iam-internal
+    connect-timeout: ${IAM_CONNECT_TIMEOUT:2s}
+    read-timeout: ${IAM_READ_TIMEOUT:3s}
+  link-control-consumer:
+    enabled: ${LINK_CONTROL_CONSUMER_ENABLED:false}
+    topic: ${LINK_CONTROL_EVENT_TOPIC:linkforge.iam.link-control.v1}
+    group-id: ${LINK_CONTROL_CONSUMER_GROUP_ID:linkforge-link-control-v1}
+    concurrency: ${LINK_CONTROL_CONSUMER_CONCURRENCY:1}
+    max-attempts: ${LINK_CONTROL_CONSUMER_MAX_ATTEMPTS:5}
+    retry-backoff: ${LINK_CONTROL_CONSUMER_RETRY_BACKOFF:1s}
+    dlt-suffix: ${LINK_CONTROL_CONSUMER_DLT_SUFFIX:.DLT}
+  resolution-cache:
+    link-ttl: ${LINK_CACHE_TTL:10m}
+    control-ttl: ${LINK_CONTROL_CACHE_TTL:30s}
+    mutation-fence-ttl: ${LINK_CACHE_MUTATION_FENCE_TTL:1m}
+    jitter: ${LINK_CACHE_JITTER:5s}

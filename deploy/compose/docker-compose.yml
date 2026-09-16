@@ -1,0 +1,281 @@
+# 本地开发环境：默认只启动 PostgreSQL 与 Redis。
+# 完整平台（含应用、Nacos、Kafka、可观测后端）：
+# docker compose --env-file .env --profile app up -d --build
+name: linkforge
+
+x-app-environment: &app-environment
+  LINKFORGE_ENV: container
+  NACOS_ENABLED: "true"
+  NACOS_CONFIG_ENABLED: "true"
+  NACOS_SERVER_ADDR: nacos:8848
+  NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+  NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos}
+  NACOS_DISCOVERY_GROUP: LINKFORGE
+  NACOS_CONFIG_GROUP: LINKFORGE
+  OTEL_TRACES_ENABLED: ${OTEL_TRACES_ENABLED:-true}
+  OTEL_TRACES_SAMPLING_PROBABILITY: ${OTEL_TRACES_SAMPLING_PROBABILITY:-1.0}
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318/v1/traces
+  IAM_ISSUER: ${IAM_ISSUER:-http://127.0.0.1:8080}
+  IAM_API_AUDIENCE: ${IAM_API_AUDIENCE:-linkforge-api}
+
+services:
+  postgres-iam:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_IAM_DB:-shortlink_iam}
+      POSTGRES_USER: ${POSTGRES_USER:-shortlink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_iam_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  postgres-link:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: ${POSTGRES_LINK_DB:-shortlink_link}
+      POSTGRES_USER: ${POSTGRES_USER:-shortlink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      TZ: Asia/Shanghai
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_link_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:8.8.1
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    command: ["sh", "-c", "redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli --no-auth-warning -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  nacos:
+    image: nacos/nacos-server:v3.2.3
+    profiles: ["nacos", "app"]
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_ADMIN_ENABLE: "true"
+      NACOS_AUTH_CONSOLE_ENABLE: "true"
+      NACOS_AUTH_SYSTEM_TYPE: nacos
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:?NACOS_AUTH_TOKEN must be set}
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-serverIdentity}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:?NACOS_AUTH_IDENTITY_VALUE must be set}
+      NACOS_AUTH_USER_AGENT_AUTH_WHITE_ENABLE: "false"
+      TZ: Asia/Shanghai
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "18080:8080"
+    volumes:
+      - nacos_data:/home/nacos/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8848'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  nacos-init:
+    image: curlimages/curl:8.16.0
+    profiles: ["nacos", "app"]
+    entrypoint: ["/bin/sh", "/scripts/nacos-init.sh"]
+    environment:
+      NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+      NACOS_PASSWORD: ${NACOS_PASSWORD:?NACOS_PASSWORD must be set}
+    volumes:
+      - ./nacos-init.sh:/scripts/nacos-init.sh:ro
+    depends_on:
+      nacos:
+        condition: service_healthy
+    restart: "no"
+
+  kafka:
+    image: apache/kafka:4.3.1
+    profiles: ["kafka", "app"]
+    environment:
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      TZ: Asia/Shanghai
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    profiles: ["obs", "app"]
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+
+  iam-service:
+    profiles: ["app"]
+    image: linkforge/iam-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        MODULE: services/linkforge-iam-service
+        JAR_PATH: services/linkforge-iam-service/target/linkforge-iam-service-0.1.0-SNAPSHOT.jar
+    environment:
+      <<: *app-environment
+      POSTGRES_HOST: postgres-iam
+      POSTGRES_PORT: 5432
+      POSTGRES_IAM_DB: ${POSTGRES_IAM_DB:-shortlink_iam}
+      POSTGRES_USER: ${POSTGRES_USER:-shortlink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      OUTBOX_ENABLED: "true"
+      IAM_SIGNING_KEY_ENCRYPTION_KEY: ${IAM_SIGNING_KEY_ENCRYPTION_KEY:?IAM_SIGNING_KEY_ENCRYPTION_KEY must be set}
+      SPA_REDIRECT_URI: ${SPA_REDIRECT_URI:-http://127.0.0.1:5173/oauth/callback}
+      SPA_LOCALHOST_REDIRECT_URI: ${SPA_LOCALHOST_REDIRECT_URI:-http://localhost:5173/oauth/callback}
+      IAM_LINK_CLIENT_SECRET_HASH: ${IAM_LINK_CLIENT_SECRET_HASH:?IAM_LINK_CLIENT_SECRET_HASH must be set}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:?OAUTH_CLIENT_SECRET must be set}
+    ports:
+      - "127.0.0.1:9000:9000"
+    depends_on:
+      postgres-iam:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      nacos-init:
+        condition: service_completed_successfully
+      otel-lgtm:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  link-service:
+    profiles: ["app"]
+    image: linkforge/link-service:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        MODULE: services/linkforge-link-service
+        JAR_PATH: services/linkforge-link-service/target/linkforge-link-service-0.1.0-SNAPSHOT.jar
+    environment:
+      <<: *app-environment
+      POSTGRES_HOST: postgres-link
+      POSTGRES_LINK_PORT: 5432
+      POSTGRES_LINK_DB: ${POSTGRES_LINK_DB:-shortlink_link}
+      POSTGRES_USER: ${POSTGRES_USER:-shortlink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      LINK_CONTROL_CONSUMER_ENABLED: "true"
+      IAM_BASE_URL: http://linkforge-iam-service
+      IAM_TOKEN_URI: http://iam-service:9000/oauth2/token
+      IAM_JWK_SET_URI: http://iam-service:9000/oauth2/jwks
+      IAM_LINK_CLIENT_ID: linkforge-link-service
+      IAM_LINK_CLIENT_SECRET: ${IAM_LINK_CLIENT_SECRET:?IAM_LINK_CLIENT_SECRET must be set}
+    ports:
+      - "127.0.0.1:9002:9002"
+    depends_on:
+      postgres-link:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      nacos-init:
+        condition: service_completed_successfully
+      iam-service:
+        condition: service_healthy
+      otel-lgtm:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9002/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  gateway:
+    profiles: ["app"]
+    image: linkforge/gateway:local
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        MODULE: services/linkforge-gateway
+        JAR_PATH: services/linkforge-gateway/target/linkforge-gateway-0.1.0-SNAPSHOT.jar
+    environment:
+      <<: *app-environment
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+      IAM_JWK_SET_URI: http://iam-service:9000/oauth2/jwks
+      SPA_ALLOWED_ORIGIN: ${SPA_ALLOWED_ORIGIN:-http://127.0.0.1:5173}
+      SPA_LOCALHOST_ALLOWED_ORIGIN: ${SPA_LOCALHOST_ALLOWED_ORIGIN:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      nacos-init:
+        condition: service_completed_successfully
+      iam-service:
+        condition: service_healthy
+      link-service:
+        condition: service_healthy
+      otel-lgtm:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  pg_iam_data:
+  pg_link_data:
+  redis_data:
+  nacos_data:
+  kafka_data:

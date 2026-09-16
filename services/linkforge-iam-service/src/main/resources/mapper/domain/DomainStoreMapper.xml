@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.domain.adapter.out.persistence.DomainStoreMapper">
+
+    <!--
+      创建域名。语句内一次性完成四件事，全部处于同一事务：
+        1. 判定操作者是否具备 domain:create 且账号状态正常；
+        2. 插入启用状态（status = 1、state_revision = 1）的域名；
+        3. 把新域名直接授权给创建者，否则该域名下无人能建短链；
+        4. 追加 DomainAvailabilityChanged 控制事件，使 link-service 建立解析投影
+           （缺失该投影时，该域名下的短链创建会被 t_link.domain_id 的外键拒绝）。
+
+      后两个 CTE 未被主查询引用，PostgreSQL 仍会把数据修改型 CTE 执行到底。
+      主查询恒返回一行：resultCode 0 = 权限拒绝，1 = 主机名已被占用，2 = 创建成功。
+      未创建时其余列全为 NULL；resultCode 恒非空，MyBatis 才会据结果集构造出记录实例。
+
+      注意：本 SELECT 的列顺序必须与 DomainCreationRow 的组件顺序一致。
+      MyBatis 默认走按列序的构造器自动映射，错位不会报错，只会静默映射到错误的字段。
+    -->
+    <select id="create"
+            resultType="io.github.ranpers.linkforge.iam.domain.adapter.out.persistence.DomainCreationRow"
+            affectData="true"
+            flushCache="true"
+            useCache="false">
+        WITH actor_allowed AS MATERIALIZED (
+            SELECT EXISTS(
+                SELECT 1
+                FROM t_user actor
+                         JOIN t_user_role user_role ON user_role.user_id = actor.id
+                         JOIN t_role_permission role_permission
+                              ON role_permission.role_id = user_role.role_id
+                         JOIN t_permission permission
+                              ON permission.id = role_permission.permission_id
+                WHERE actor.id = #{actorUserId}
+                  AND actor.status = 1
+                  AND actor.deleted_at IS NULL
+                  AND permission.code = 'domain:create'
+            ) AS allowed
+        ),
+        inserted AS (
+            INSERT INTO t_domain (domain, name, status, state_revision)
+            SELECT #{host}, #{name,jdbcType=VARCHAR}, 1, 1
+            WHERE (SELECT allowed FROM actor_allowed)
+            ON CONFLICT (domain) DO NOTHING
+            RETURNING id, domain, name, status, state_revision, created_at, updated_at
+        ),
+        granted AS (
+            INSERT INTO t_user_domain (user_id, domain_id)
+            SELECT #{actorUserId}, inserted.id
+            FROM inserted
+            ON CONFLICT (user_id, domain_id) DO NOTHING
+            RETURNING domain_id
+        ),
+        appended AS (
+            INSERT INTO t_outbox_event
+                (id, event_type, schema_version, stream_key, partition_key,
+                 trace_id, payload)
+            SELECT event_id,
+                   'DomainAvailabilityChanged',
+                   1,
+                   'DOMAIN:' || inserted.id::text,
+                   inserted.id::text,
+                   #{traceId,jdbcType=VARCHAR},
+                   jsonb_build_object(
+                       'eventId', event_id::text,
+                       'eventType', 'DomainAvailabilityChanged',
+                       'schemaVersion', 1,
+                       'streamKey', 'DOMAIN:' || inserted.id::text,
+                       'revision', inserted.state_revision,
+                       'occurredAt', inserted.created_at,
+                       'traceId', #{traceId,jdbcType=VARCHAR},
+                       'payload', jsonb_build_object(
+                           'domainId', inserted.id::text,
+                           'host', inserted.domain,
+                           'enabled', inserted.status = 1
+                       )
+                   )
+            FROM inserted
+                     CROSS JOIN LATERAL (SELECT uuidv7() AS event_id) generated
+            RETURNING id
+        )
+        SELECT CASE
+                   WHEN NOT (SELECT allowed FROM actor_allowed) THEN 0
+                   WHEN EXISTS(SELECT 1 FROM inserted) THEN 2
+                   ELSE 1
+               END AS resultCode,
+               (SELECT id FROM inserted)                  AS id,
+               (SELECT domain FROM inserted)              AS domain,
+               (SELECT name FROM inserted)                AS name,
+               (SELECT status = 1 FROM inserted)          AS enabled,
+               (SELECT state_revision FROM inserted)      AS revision,
+               (SELECT created_at FROM inserted)          AS createdAt,
+               (SELECT updated_at FROM inserted)          AS updatedAt
+    </select>
+
+    <!--
+      修改域名的展示名称，仅此一个字段。主机名不开放修改：它是存量短链的解析依据，
+      改名会让已发布的短链全部失效，需要新主机名时应新建域名。
+      展示名称不参与解析，因此不产生控制事件。
+
+      主查询恒返回一行：resultCode 0 = 权限拒绝，1 = 域名不存在，
+      2 = 已更新，3 = 名称无变化（未产生写入）。
+    -->
+    <select id="update"
+            resultType="integer"
+            affectData="true"
+            flushCache="true"
+            useCache="false">
+        WITH actor_allowed AS MATERIALIZED (
+            SELECT EXISTS(
+                SELECT 1
+                FROM t_user actor
+                         JOIN t_user_role user_role ON user_role.user_id = actor.id
+                         JOIN t_role_permission role_permission
+                              ON role_permission.role_id = user_role.role_id
+                         JOIN t_permission permission
+                              ON permission.id = role_permission.permission_id
+                WHERE actor.id = #{actorUserId}
+                  AND actor.status = 1
+                  AND actor.deleted_at IS NULL
+                  AND permission.code = 'domain:update'
+            ) AS allowed
+        ),
+        target AS MATERIALIZED (
+            SELECT id
+            FROM t_domain
+            WHERE id = #{domainId}
+        ),
+        updated AS (
+            UPDATE t_domain
+            SET name = #{name,jdbcType=VARCHAR},
+                updated_at = now()
+            WHERE id = #{domainId}
+              AND (SELECT allowed FROM actor_allowed)
+              AND name IS DISTINCT FROM #{name,jdbcType=VARCHAR}
+            RETURNING id
+        )
+        SELECT CASE
+                   WHEN NOT (SELECT allowed FROM actor_allowed) THEN 0
+                   WHEN NOT EXISTS(SELECT 1 FROM target) THEN 1
+                   WHEN EXISTS(SELECT 1 FROM updated) THEN 2
+                   ELSE 3
+               END
+    </select>
+
+</mapper>

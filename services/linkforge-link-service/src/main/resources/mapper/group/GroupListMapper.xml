@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.link.group.adapter.out.persistence.GroupListMapper">
+
+    <!-- 与其余列表接口一致，按 (created_at, id) 倒序做键集分页；sort_order 仅作为展示提示返回。 -->
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.link.group.application.port.in.GroupView">
+        SELECT id,
+               name,
+               sort_order AS sortOrder,
+               created_at AS createdAt,
+               updated_at AS updatedAt
+        FROM t_group
+        WHERE deleted_at IS NULL
+          AND user_id = #{criteria.ownerUserId}
+        <if test="criteria.cursorCreatedAt != null">
+            AND (created_at, id) &lt; (#{criteria.cursorCreatedAt}, #{criteria.cursorId})
+        </if>
+        ORDER BY created_at DESC, id DESC
+        LIMIT #{criteria.fetchSize}
+    </select>
+
+</mapper>
