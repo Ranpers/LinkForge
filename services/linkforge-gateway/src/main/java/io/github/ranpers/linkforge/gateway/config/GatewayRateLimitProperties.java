@@ -14,6 +14,17 @@ public class GatewayRateLimitProperties {
     @NotNull
     private Limit authentication = new Limit(10, 20);
 
+    /**
+     * OIDC Discovery 与 JWK Set 使用的令牌桶。
+     *
+     * @implNote 桶容量相对补充速率给得比其余路由都宽：元数据在客户端侧可缓存，稳态流量低，而一批
+     * 资源服务器同时冷启动或缓存集中过期时会集中拉取，用稳态速率卡住这种突发没有收益。它独立于
+     * 其余路由，避免一侧的突发消耗另一侧的配额。
+     */
+    @Valid
+    @NotNull
+    private Limit metadata = new Limit(20, 100);
+
     @Valid
     @NotNull
     private Limit api = new Limit(30, 60);
@@ -28,6 +39,14 @@ public class GatewayRateLimitProperties {
 
     public void setAuthentication(Limit authentication) {
         this.authentication = authentication;
+    }
+
+    public Limit getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Limit metadata) {
+        this.metadata = metadata;
     }
 
     public Limit getApi() {

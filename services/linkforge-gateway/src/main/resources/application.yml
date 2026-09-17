@@ -91,6 +91,9 @@ linkforge:
       authentication:
         replenish-rate: ${AUTH_RATE_REPLENISH:10}
         burst-capacity: ${AUTH_RATE_BURST:20}
+      metadata:
+        replenish-rate: ${METADATA_RATE_REPLENISH:20}
+        burst-capacity: ${METADATA_RATE_BURST:100}
       api:
         replenish-rate: ${API_RATE_REPLENISH:30}
         burst-capacity: ${API_RATE_BURST:60}
