@@ -9,6 +9,7 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpMethod;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(GatewayRateLimitProperties.class)
@@ -50,9 +51,18 @@ public class GatewayRouteConfiguration {
             @Qualifier("redirectRateLimiter") RedisRateLimiter redirectRateLimiter
     ) {
         return builder.routes()
+                .route("iam-registration", route -> route
+                        .path("/api/v1/users")
+                        .and()
+                        .method(HttpMethod.POST)
+                        .filters(filters -> filters.requestRateLimiter(config -> {
+                            config.setKeyResolver(gatewayClientKeyResolver);
+                            config.setRateLimiter(authenticationRateLimiter);
+                            config.setDenyEmptyKey(true);
+                        }))
+                        .uri("lb://linkforge-iam-service"))
                 .route("iam-authentication", route -> route
                         .path(
-                                "/api/v1/user/register",
                                 "/oauth2/**",
                                 "/.well-known/**",
                                 "/userinfo",
@@ -66,7 +76,11 @@ public class GatewayRouteConfiguration {
                         }))
                         .uri("lb://linkforge-iam-service"))
                 .route("iam-api", route -> route
-                        .path("/api/v1/users/**", "/api/v1/domains/**")
+                        .path(
+                                "/api/v1/users",
+                                "/api/v1/users/**",
+                                "/api/v1/domains/**"
+                        )
                         .filters(filters -> filters.requestRateLimiter(config -> {
                             config.setKeyResolver(gatewayClientKeyResolver);
                             config.setRateLimiter(apiRateLimiter);

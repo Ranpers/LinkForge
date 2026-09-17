@@ -59,7 +59,7 @@ public class ResourceServerConfig {
                 .sessionManagement(sm ->
                         sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/v1/user/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers("/internal/**")
                         .hasAuthority("SCOPE_internal.authorization.read")
                         .requestMatchers(HttpMethod.GET, "/api/v1/users")

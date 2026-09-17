@@ -1,0 +1,795 @@
+openapi: 3.1.0
+info:
+  title: LinkForge Public API
+  version: 1.0.0
+  description: Gateway 对外公开的用户、域名、短链、分组及跳转接口。
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+tags:
+  - name: Users
+  - name: Domains
+  - name: Links
+  - name: Groups
+  - name: Security
+  - name: Redirect
+paths:
+  /api/v1/users:
+    post:
+      tags: [Users]
+      operationId: registerUser
+      summary: 注册用户
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 注册成功
+          headers:
+            X-Trace-Id:
+              $ref: '#/components/headers/TraceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags: [Users]
+      operationId: listUsers
+      summary: 分页查询用户
+      parameters:
+        - $ref: '#/components/parameters/UserStatus'
+        - $ref: '#/components/parameters/UserSearch'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 用户页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/v1/users/{userId}/security-status:
+    patch:
+      tags: [Security]
+      operationId: changeUserSecurityStatus
+      summary: 修改用户安全状态
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeUserSecurityStatusRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/users/{userId}/link-security-restrictions:
+    post:
+      tags: [Security]
+      operationId: createLinkSecurityRestriction
+      summary: 创建用户短链安全限制
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLinkSecurityRestrictionRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateLinkSecurityRestrictionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/users/{userId}/link-security-restrictions/{restrictionId}:
+    delete:
+      tags: [Security]
+      operationId: revokeLinkSecurityRestriction
+      summary: 撤销用户短链安全限制
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - name: restrictionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: 撤销成功
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/domains:
+    get:
+      tags: [Domains]
+      operationId: listDomains
+      summary: 分页查询域名
+      parameters:
+        - name: enabled
+          in: query
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Search128'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 域名页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainPage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Domains]
+      operationId: createDomain
+      summary: 创建域名
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomainRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Domain'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/domains/{domainId}:
+    patch:
+      tags: [Domains]
+      operationId: updateDomain
+      summary: 修改域名展示信息
+      parameters:
+        - $ref: '#/components/parameters/DomainId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDomainRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/domains/{domainId}/availability:
+    patch:
+      tags: [Domains]
+      operationId: changeDomainAvailability
+      summary: 修改域名可用状态
+      parameters:
+        - $ref: '#/components/parameters/DomainId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/links:
+    post:
+      tags: [Links]
+      operationId: createShortLink
+      summary: 创建短链
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShortLinkRequest'
+      responses:
+        '201':
+          description: 创建或幂等重放成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateShortLinkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+    get:
+      tags: [Links]
+      operationId: listShortLinks
+      summary: 分页查询短链
+      parameters:
+        - name: createdByUserId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: domainId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, DISABLED]
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 64
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 短链页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShortLinkPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/v1/links/{linkId}/target:
+    patch:
+      tags: [Links]
+      operationId: updateShortLinkTarget
+      summary: 修改短链目标地址
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLinkTargetRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+  /api/v1/links/{linkId}/availability:
+    patch:
+      tags: [Links]
+      operationId: changeShortLinkAvailability
+      summary: 修改短链可用状态
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/links/{linkId}:
+    delete:
+      tags: [Links]
+      operationId: deleteShortLink
+      summary: 软删除短链
+      parameters:
+        - $ref: '#/components/parameters/LinkId'
+      responses:
+        '204':
+          description: 删除成功
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/v1/groups:
+    get:
+      tags: [Groups]
+      operationId: listGroups
+      summary: 分页查询分组
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: 分组页
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupPage'
+    post:
+      tags: [Groups]
+      operationId: createGroup
+      summary: 创建分组
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/groups/{groupId}:
+    get:
+      tags: [Groups]
+      operationId: getGroup
+      summary: 查询分组
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: 分组详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Groups]
+      operationId: updateGroup
+      summary: 修改分组
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '204':
+          description: 修改成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Groups]
+      operationId: deleteGroup
+      summary: 删除分组
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '204':
+          description: 删除成功
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /r/{linkCode}:
+    get:
+      tags: [Redirect]
+      operationId: redirectShortLink
+      summary: 解析并跳转短链
+      security: []
+      parameters:
+        - name: linkCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '307':
+          description: 临时重定向至目标地址
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+            X-Trace-Id:
+              $ref: '#/components/headers/TraceId'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  headers:
+    TraceId:
+      description: 服务端生成的请求关联标识
+      schema:
+        type: string
+        maxLength: 64
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DomainId:
+      name: domainId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LinkId:
+      name: linkId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserStatus:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [DEACTIVATED, ACTIVE, SECURITY_SUSPENDED]
+    UserSearch:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 64
+    Search128:
+      name: q
+      in: query
+      schema:
+        type: string
+        maxLength: 128
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    BadRequest:
+      description: 请求参数不合法
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: 缺少或无法验证访问令牌
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+        X-Trace-Id:
+          $ref: '#/components/headers/TraceId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: 当前主体无权执行操作
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: 资源不存在或不可用
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: 当前状态或唯一约束冲突
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unavailable:
+      description: 依赖服务暂时不可用
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code, detail]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+        detail:
+          type: string
+        traceId:
+          type: string
+        reasonCode:
+          type: string
+        decisionId:
+          type: string
+          format: uuid
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          pattern: '^[a-zA-Z0-9_]{4,64}$'
+        password:
+          type: string
+          minLength: 6
+          maxLength: 64
+          writeOnly: true
+        email:
+          type: [string, 'null']
+          format: email
+          maxLength: 128
+    RegisterResponse:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+    User:
+      type: object
+      required: [id, username, status, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        username: {type: string}
+        email: {type: [string, 'null'], format: email}
+        realName: {type: [string, 'null']}
+        status: {type: string}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    UserPage:
+      $ref: '#/components/schemas/CursorPageUsers'
+    CursorPageUsers:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        nextCursor:
+          type: [string, 'null']
+        hasMore:
+          type: boolean
+    ChangeUserSecurityStatusRequest:
+      type: object
+      required: [suspended]
+      properties:
+        suspended: {type: boolean}
+    CreateLinkSecurityRestrictionRequest:
+      type: object
+      required: [mode, reasonCode]
+      properties:
+        mode: {type: string, enum: [ALL, CREATED_DURING]}
+        rangeStart: {type: [string, 'null'], format: date-time}
+        rangeEnd: {type: [string, 'null'], format: date-time}
+        reasonCode: {type: string, minLength: 1, maxLength: 64}
+    CreateLinkSecurityRestrictionResponse:
+      type: object
+      required: [restrictionId]
+      properties:
+        restrictionId: {type: string, format: uuid}
+    CreateDomainRequest:
+      type: object
+      required: [domain]
+      properties:
+        domain: {type: string, minLength: 1, maxLength: 253}
+        name: {type: [string, 'null'], maxLength: 128}
+    UpdateDomainRequest:
+      type: object
+      properties:
+        name: {type: [string, 'null'], maxLength: 128}
+    AvailabilityRequest:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: {type: boolean}
+    Domain:
+      type: object
+      required: [id, domain, enabled, revision, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        domain: {type: string}
+        name: {type: [string, 'null']}
+        enabled: {type: boolean}
+        revision: {type: integer, format: int64}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    DomainPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Domain'
+        nextCursor: {type: [string, 'null']}
+        hasMore: {type: boolean}
+    CreateShortLinkRequest:
+      type: object
+      required: [name, fullUrl, sortOrder, domainId]
+      properties:
+        groupId: {type: [string, 'null'], format: uuid}
+        name: {type: string, minLength: 1, maxLength: 64}
+        linkCode: {type: [string, 'null']}
+        fullUrl: {type: string, format: uri, maxLength: 2048}
+        sortOrder: {type: integer, format: int32}
+        domainId: {type: string, format: uuid}
+        expiresAt: {type: [string, 'null'], format: date-time}
+    CreateShortLinkResponse:
+      type: object
+      required: [id, linkCode, domainId, codeType]
+      properties:
+        id: {type: string, format: uuid}
+        linkCode: {type: string}
+        domainId: {type: string, format: uuid}
+        codeType: {type: string, enum: [GENERATED, CUSTOM]}
+    UpdateLinkTargetRequest:
+      type: object
+      required: [fullUrl]
+      properties:
+        fullUrl: {type: string, format: uri, maxLength: 2048}
+    ShortLink:
+      type: object
+      required: [id, createdByUserId, name, linkCode, codeType, fullUrl, sortOrder, domainId, status, revision, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        createdByUserId: {type: string, format: uuid}
+        groupId: {type: [string, 'null'], format: uuid}
+        name: {type: string}
+        linkCode: {type: string}
+        codeType: {type: string}
+        fullUrl: {type: string, format: uri}
+        sortOrder: {type: integer, format: int32}
+        domainId: {type: string, format: uuid}
+        status: {type: string}
+        disabledReasonCode: {type: [string, 'null']}
+        expiresAt: {type: [string, 'null'], format: date-time}
+        revision: {type: integer, format: int64}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    ShortLinkPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShortLink'
+        nextCursor: {type: [string, 'null']}
+        hasMore: {type: boolean}
+    CreateGroupRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 64}
+        sortOrder: {type: [integer, 'null'], minimum: 0}
+    UpdateGroupRequest:
+      type: object
+      required: [name]
+      properties:
+        name: {type: string, minLength: 1, maxLength: 64}
+        sortOrder: {type: [integer, 'null'], minimum: 0}
+    Group:
+      type: object
+      required: [id, name, sortOrder, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        sortOrder: {type: integer, format: int32}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    GroupPage:
+      type: object
+      required: [items, hasMore]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Group'
+        nextCursor: {type: [string, 'null']}
+        hasMore: {type: boolean}
