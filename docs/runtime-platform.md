@@ -27,7 +27,14 @@ Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 
 与 404），429 表示超出 Redis 令牌桶配额，503 表示没有可用的下游实例，504 表示下游响应
 超时。超时阈值由 `spring.cloud.gateway.server.webflux.httpclient.response-timeout`
 控制，默认 10 秒，可用 `GATEWAY_RESPONSE_TIMEOUT` 覆盖；未配置时 504 分支不会触发。
-这些响应与业务错误共用同一个 `requestId`。
+下游服务另外会返回 400、406、409、415：406 表示无法按 `Accept` 头生成响应，415 表示请求体
+的 `Content-Type` 不受支持。上述所有响应，无论由 Gateway 还是下游服务产生，都带
+`X-Request-Id` 响应头，并与响应体中的 `requestId` 一致。
+
+限流的四个 `X-RateLimit-Remaining`、`X-RateLimit-Replenish-Rate`、`X-RateLimit-Burst-Capacity`
+和 `X-RateLimit-Requested-Tokens` 响应头在放行与拒绝两种结果上都会返回，并通过 CORS
+`Access-Control-Expose-Headers` 暴露给浏览器脚本。不返回 `Retry-After`：令牌桶按速率补充，
+不产生可供换算的固定等待时长。
 
 如果 Gateway 位于受控反向代理之后，应在网络边界清洗转发头，再根据代理拓扑调整 `server.forward-headers-strategy` 和限流键解析逻辑。
 

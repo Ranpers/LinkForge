@@ -9,11 +9,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.ErrorResponseException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -107,6 +110,40 @@ public class LinkGlobalExceptionHandler {
                 HttpStatus.METHOD_NOT_ALLOWED,
                 "METHOD_NOT_ALLOWED",
                 exception.getMethod() + " 不支持该资源"
+        );
+    }
+
+    /**
+     * 处理请求体的媒体类型不受支持的情况。
+     *
+     * @implNote 与 405 同属只实现 {@code ErrorResponse} 而不继承 {@link ErrorResponseException}
+     * 的一类框架异常，缺少本处理器时会落入 {@link Exception} 兜底并被报成 500。详情只回传调用方
+     * 实际声明的 Content-Type，不回显框架列举的可接受类型，避免把服务端内部支持的格式暴露出去。
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    ProblemDetail mediaTypeNotSupported(HttpMediaTypeNotSupportedException exception) {
+        MediaType contentType = exception.getContentType();
+        return ApiProblems.create(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "UNSUPPORTED_MEDIA_TYPE",
+                contentType == null ? "请求体媒体类型不受支持" : "不支持的请求体类型 " + contentType
+        );
+    }
+
+    /**
+     * 处理无法按客户端 Accept 头生成响应的情况。
+     *
+     * @implNote 问题响应自身也是响应，同样受触发本异常的 Accept 头约束。当客户端明确不接受
+     * {@code application/problem+json} 时问题对象也写不出去，框架会丢弃本处理器的返回值并回退到
+     * {@code DefaultHandlerExceptionResolver} 返回不带响应体的 406。因此本处理器保证的是状态码
+     * 语义，而不是任何情况下都带响应体。
+     */
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    ProblemDetail mediaTypeNotAcceptable() {
+        return ApiProblems.create(
+                HttpStatus.NOT_ACCEPTABLE,
+                "NOT_ACCEPTABLE",
+                "无法生成客户端可接受的响应格式"
         );
     }
 
