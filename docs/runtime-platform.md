@@ -18,7 +18,10 @@ Gateway 只暴露明确的公共接口：
 Gateway 不信任客户端传入的 `X-Request-Id`，而是在安全过滤器前生成新的关联标识，
 传递给下游并写入响应头。IAM 与 Link Service 只沿用规范 UUID 形式的入站标识，其余情况
 自行生成；Link Service 调用 IAM 时会原样传递当前标识，使跨服务调用共用同一个值。
-所有 HTTP API 错误统一使用 `application/problem+json`，稳定业务码位于 `code` 字段。
+除 406 外，所有 HTTP API 错误统一使用 `application/problem+json`，稳定业务码位于 `code`
+字段。406 表示无法按 `Accept` 头生成响应，它不携带响应体，但仍携带 `X-Request-Id`；触发它的
+`Accept` 头同样约束问题响应自身，写任何响应体都会让结果取决于协商结果，因此服务端不尝试
+协商，调用方只依据状态码判断。
 公开接口契约位于 `/openapi/linkforge-public-api-v1.yaml`，其中的路径都相对于 Gateway
 地址，不声明固定的服务器地址。
 
@@ -27,9 +30,9 @@ Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 
 与 404），429 表示超出 Redis 令牌桶配额，503 表示没有可用的下游实例，504 表示下游响应
 超时。超时阈值由 `spring.cloud.gateway.server.webflux.httpclient.response-timeout`
 控制，默认 10 秒，可用 `GATEWAY_RESPONSE_TIMEOUT` 覆盖；未配置时 504 分支不会触发。
-下游服务另外会返回 400、406、409、415：406 表示无法按 `Accept` 头生成响应，415 表示请求体
-的 `Content-Type` 不受支持。上述所有响应，无论由 Gateway 还是下游服务产生，都带
-`X-Request-Id` 响应头，并与响应体中的 `requestId` 一致。
+下游服务另外会返回 400、406、409、415：406 表示无法按 `Accept` 头生成响应（无响应体，见上），
+415 表示请求体的 `Content-Type` 不受支持。除 406 外的上述所有响应，无论由 Gateway 还是下游
+服务产生，都带 `X-Request-Id` 响应头，并与响应体中的 `requestId` 一致。
 公开契约按操作声明可达状态码，不做统一填充：503 适用于全部操作，401 适用于除用户注册与
 短链跳转之外的全部操作 —— 只有这两个操作无需访问令牌，不会返回 401。400、403、404、409
 只在具体业务会产生的操作上声明。

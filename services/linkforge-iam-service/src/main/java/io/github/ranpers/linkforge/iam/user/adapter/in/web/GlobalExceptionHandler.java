@@ -12,6 +12,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -152,18 +153,16 @@ public class GlobalExceptionHandler {
     /**
      * 处理无法按客户端 Accept 头生成响应的情况。
      *
-     * @implNote 问题响应自身也是响应，同样受触发本异常的 Accept 头约束。当客户端明确不接受
-     * {@code application/problem+json} 时问题对象也写不出去，框架会丢弃本处理器的返回值并回退到
-     * {@code DefaultHandlerExceptionResolver} 返回不带响应体的 406。因此本处理器保证的是状态码
-     * 语义，而不是任何情况下都带响应体。
+     * @implNote 与其余问题响应不同，这里刻意不写响应体。触发本异常的 Accept 头同样约束问题
+     * 响应自身：只要客户端不接受 {@code application/problem+json}，问题对象就写不出去，框架会
+     * 丢弃返回值并回退到 {@code DefaultHandlerExceptionResolver}。返回空 body 让两种路径收敛到
+     * 同一个结果，406 因此始终无响应体，调用方只需依赖状态码。`X-Request-Id` 由
+     * {@link io.github.ranpers.linkforge.webmvc.request.RequestIdFilter} 在响应提交前写入，
+     * 不经过异常处理，因此该响应头在 406 上依然存在。
      */
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
-    ProblemDetail handleMediaTypeNotAcceptable() {
-        return ApiProblems.create(
-                HttpStatus.NOT_ACCEPTABLE,
-                "NOT_ACCEPTABLE",
-                "无法生成客户端可接受的响应格式"
-        );
+    ResponseEntity<Void> handleMediaTypeNotAcceptable() {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

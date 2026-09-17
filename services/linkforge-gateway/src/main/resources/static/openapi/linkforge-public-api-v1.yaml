@@ -1164,14 +1164,12 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     NotAcceptable:
-      description: 无法按客户端 Accept 头生成响应
+      description: >
+        无法按客户端 Accept 头生成响应。该响应不携带响应体：触发它的 Accept 头同样约束问题
+        响应自身，因此服务端不尝试协商任何媒体类型，调用方只依据状态码判断结果。
       headers:
         X-Request-Id:
           $ref: '#/components/headers/RequestId'
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/Problem'
     UnsupportedMediaType:
       description: 请求体媒体类型不受支持
       headers:
