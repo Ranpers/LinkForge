@@ -15,7 +15,7 @@ Gateway 只暴露明确的公共接口：
 | `link-api`                    | `linkforge-link-service` | 链接与分组管理                     | JWT        |
 | `link-redirect`               | `linkforge-link-service` | `/r/**`                            | 公开       |
 
-`/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。注册与认证、元数据、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。路由自带显式 order，精确路由压过通配路由，因此 `GET /.well-known/**` 与 `GET /oauth2/jwks` 不会被 `/oauth2/**` 抢走，`POST /api/v1/users` 也不会落到 `iam-api`，两者都不依赖声明顺序。元数据只放行 GET：Spring Authorization Server 的 Discovery 与 JWK Set 由 GET-only 过滤器处理，不存在 MVC 那种 GET 处理器自动承接 HEAD 的语义，其余方法仍落到 `iam-authentication`，按拒绝降级处置。
+`/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。注册与认证、元数据、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。路由自带显式 order，精确路由压过通配路由，因此 `GET /.well-known/**` 与 `GET /oauth2/jwks` 不会被 `/oauth2/**` 抢走，`POST /api/v1/users` 也不会落到 `iam-api`，两者都不依赖声明顺序。现有路由的 order 全为负值，新增路由若未显式指定，Spring Cloud Gateway 默认的 0 会排在它们之后，表现为新路由不生效，而不是静默接管已有流量。元数据只放行 GET：Spring Authorization Server 的 Discovery 与 JWK Set 由 GET-only 过滤器处理，不存在 MVC 那种 GET 处理器自动承接 HEAD 的语义，其余方法仍落到 `iam-authentication`，按拒绝降级处置。
 
 令牌桶依赖的 Redis 不可用时如何处置按路由显式声明，不从路由 ID 或路径前缀推断：
 

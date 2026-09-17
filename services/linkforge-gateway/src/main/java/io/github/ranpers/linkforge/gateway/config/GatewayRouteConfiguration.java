@@ -27,18 +27,22 @@ public class GatewayRouteConfiguration {
      * 能否被稳定保留，挪动一次声明位置就会把精确路由的限流策略静默换成通配路由的：元数据会从可用性
      * 优先变成拒绝降级，注册会用上业务 API 的令牌桶。因此凡有通配匹配之处，精确路由一律取更小的值。
      * 取值只表达相对顺序，留出间隔以便插入新路由。
+     * <p>
+     * 取值全部为负：Spring Cloud Gateway 自身的默认 order 是 0，将来新增路由若忘记显式指定，会落在
+     * 全部现有路由之后，表现为新路由不生效，而不是默认的 0 抢在安全边界之前、由一条通配路径静默接管
+     * 注册、元数据或管理接口的流量。忘记设置时宁可让新路由不生效，也不要让它悄悄改变已有路由的限流策略。
      */
-    private static final int ORDER_IAM_REGISTRATION = 10;
+    private static final int ORDER_IAM_REGISTRATION = -60;
 
-    private static final int ORDER_IAM_AUTHENTICATION_METADATA = 20;
+    private static final int ORDER_IAM_AUTHENTICATION_METADATA = -50;
 
-    private static final int ORDER_IAM_AUTHENTICATION = 30;
+    private static final int ORDER_IAM_AUTHENTICATION = -40;
 
-    private static final int ORDER_IAM_API = 40;
+    private static final int ORDER_IAM_API = -30;
 
-    private static final int ORDER_LINK_API = 50;
+    private static final int ORDER_LINK_API = -20;
 
-    private static final int ORDER_LINK_REDIRECT = 60;
+    private static final int ORDER_LINK_REDIRECT = -10;
 
     @Bean
     @Primary
