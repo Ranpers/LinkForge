@@ -17,6 +17,11 @@ import java.util.Optional;
  *
  * @implNote 不能沿用 {@code RequestRateLimiter} 网关过滤器：它在拒绝请求时先设置状态码再结束响应，
  * 响应已经提交，调用方只能收到一个没有响应体的 429。这里改为在写入响应体之前完成判定。
+ * <p>
+ * 令牌桶在 Redis 不可用时放行而不是拒绝，见
+ * {@link org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter} 的降级分支。
+ * 这是刻意的取舍：把依赖故障改成 503 会让 Redis 成为全部流量的硬依赖，一次抖动就等于整站不可用。
+ * 故障只写进服务端 ERROR 日志，不改变调用方看到的结果，因此本过滤器不额外包装该异常。
  */
 public final class GatewayRateLimitFilter implements GatewayFilter {
 
