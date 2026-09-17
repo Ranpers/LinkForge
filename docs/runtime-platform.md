@@ -30,11 +30,16 @@ Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 
 下游服务另外会返回 400、406、409、415：406 表示无法按 `Accept` 头生成响应，415 表示请求体
 的 `Content-Type` 不受支持。上述所有响应，无论由 Gateway 还是下游服务产生，都带
 `X-Request-Id` 响应头，并与响应体中的 `requestId` 一致。
+公开契约按操作声明可达状态码，不做统一填充：503 适用于全部操作，401 适用于除用户注册与
+短链跳转之外的全部操作 —— 只有这两个操作无需访问令牌，不会返回 401。400、403、404、409
+只在具体业务会产生的操作上声明。
 
 限流的四个 `X-RateLimit-Remaining`、`X-RateLimit-Replenish-Rate`、`X-RateLimit-Burst-Capacity`
-和 `X-RateLimit-Requested-Tokens` 响应头在放行与拒绝两种结果上都会返回，并通过 CORS
-`Access-Control-Expose-Headers` 暴露给浏览器脚本。不返回 `Retry-After`：令牌桶按速率补充，
-不产生可供换算的固定等待时长。
+和 `X-RateLimit-Requested-Tokens` 响应头在放行与拒绝两种结果上都会返回，因此公开契约把它们
+与 `X-Request-Id` 一起声明在全部成功响应和 429 上；401 不声明，因为认证失败可能发生在限流
+过滤器之前。这些响应头通过 CORS `Access-Control-Expose-Headers` 暴露给浏览器脚本。不返回
+`Retry-After`：令牌桶按速率补充，不产生可供换算的固定等待时长。`X-RateLimit-Remaining` 取值
+为 -1 表示本次限流判定已经降级（令牌桶依赖的存储不可用，网关按放行处理），该取值不反映真实余量。
 
 如果 Gateway 位于受控反向代理之后，应在网络边界清洗转发头，再根据代理拓扑调整 `server.forward-headers-strategy` 和限流键解析逻辑。
 

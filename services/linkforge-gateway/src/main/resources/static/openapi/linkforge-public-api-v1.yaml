@@ -28,11 +28,21 @@ paths:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
       responses:
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '201':
           description: 注册成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -63,11 +73,21 @@ paths:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '200':
           description: 用户页
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -100,11 +120,23 @@ paths:
             schema:
               $ref: '#/components/schemas/ChangeUserSecurityStatusRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -139,11 +171,23 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateLinkSecurityRestrictionRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '201':
           description: 创建成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -180,11 +224,23 @@ paths:
             type: string
             format: uuid
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 撤销成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -213,11 +269,21 @@ paths:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '200':
           description: 域名页
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -247,11 +313,23 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateDomainRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '201':
           description: 创建成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -288,11 +366,23 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateDomainRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -325,11 +415,23 @@ paths:
             schema:
               $ref: '#/components/schemas/AvailabilityRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -368,11 +470,21 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateShortLinkRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '201':
           description: 创建或幂等重放成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -425,11 +537,21 @@ paths:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '200':
           description: 短链页
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -462,11 +584,21 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateLinkTargetRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -501,11 +633,23 @@ paths:
             schema:
               $ref: '#/components/schemas/AvailabilityRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -532,11 +676,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/LinkId'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 删除成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
@@ -560,11 +716,23 @@ paths:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '200':
           description: 分组页
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -590,11 +758,23 @@ paths:
             schema:
               $ref: '#/components/schemas/CreateGroupRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '201':
           description: 创建成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -623,11 +803,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/GroupId'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '200':
           description: 分组详情
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
           content:
             application/json:
               schema:
@@ -657,11 +849,23 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateGroupRequest'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 修改成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -687,11 +891,23 @@ paths:
       parameters:
         - $ref: '#/components/parameters/GroupId'
       responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '204':
           description: 删除成功
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
@@ -715,7 +931,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/LinkCode'
       responses:
         '307':
           description: 临时重定向至目标地址
@@ -726,6 +942,14 @@ paths:
                 format: uri
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Replenish-Rate:
+              $ref: '#/components/headers/RateLimitReplenishRate'
+            X-RateLimit-Burst-Capacity:
+              $ref: '#/components/headers/RateLimitBurstCapacity'
+            X-RateLimit-Requested-Tokens:
+              $ref: '#/components/headers/RateLimitRequestedTokens'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
@@ -755,6 +979,28 @@ components:
       schema:
         type: string
         format: uuid
+    RateLimitRemaining:
+      description: >
+        当前主体在令牌桶中的剩余令牌数，向下取整。取值为 -1 表示限流判定已经降级：
+        令牌桶依赖的存储不可用，网关按放行处理，该取值不反映真实余量。
+      schema:
+        type: integer
+        format: int64
+    RateLimitReplenishRate:
+      description: 该路由令牌桶每秒补充的令牌数，即稳态下允许的每秒请求数。
+      schema:
+        type: integer
+        format: int64
+    RateLimitBurstCapacity:
+      description: 该路由令牌桶允许瞬间消耗的令牌数，即突发容量。
+      schema:
+        type: integer
+        format: int64
+    RateLimitRequestedTokens:
+      description: 本请求从令牌桶中消耗的令牌数。
+      schema:
+        type: integer
+        format: int64
   parameters:
     UserId:
       name: userId
@@ -887,6 +1133,14 @@ components:
       headers:
         X-Request-Id:
           $ref: '#/components/headers/RequestId'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        X-RateLimit-Replenish-Rate:
+          $ref: '#/components/headers/RateLimitReplenishRate'
+        X-RateLimit-Burst-Capacity:
+          $ref: '#/components/headers/RateLimitBurstCapacity'
+        X-RateLimit-Requested-Tokens:
+          $ref: '#/components/headers/RateLimitRequestedTokens'
       content:
         application/problem+json:
           schema:
@@ -1058,6 +1312,21 @@ components:
             $ref: '#/components/schemas/Domain'
         nextCursor: {type: [string, 'null']}
         hasMore: {type: boolean}
+    LinkCode:
+      type: string
+      minLength: 4
+      maxLength: 32
+      pattern: '^[A-Za-z0-9_-]{4,32}$'
+      description: 短码；4 到 32 位，只允许字母、数字、下划线和连字符。
+    NullableCustomLinkCode:
+      type: [string, 'null']
+      minLength: 4
+      maxLength: 32
+      pattern: '^[A-Za-z0-9_-]{4,32}$'
+      description: >
+        自定义短码；省略时为 null，由系统分配一个 10 位 Base62 短码。
+        不区分大小写地拒绝系统保留词：actuator、api、error、health、login、oauth2、
+        swagger-ui、v3。
     CreateShortLinkRequest:
       type: object
       required: [name, fullUrl, domainId]
@@ -1065,14 +1334,7 @@ components:
         groupId: {type: [string, 'null'], format: uuid}
         name: {type: string, minLength: 1, maxLength: 64}
         linkCode:
-          type: [string, 'null']
-          minLength: 4
-          maxLength: 32
-          pattern: '^[A-Za-z0-9_-]{4,32}$'
-          description: >
-            自定义短码；省略时为 null，由系统分配一个 10 位 Base62 短码。
-            不区分大小写地拒绝系统保留词：actuator、api、error、health、login、oauth2、
-            swagger-ui、v3。
+          $ref: '#/components/schemas/NullableCustomLinkCode'
         fullUrl:
           type: string
           format: uri
@@ -1090,7 +1352,8 @@ components:
       required: [id, linkCode, domainId, codeType]
       properties:
         id: {type: string, format: uuid}
-        linkCode: {type: string}
+        linkCode:
+          $ref: '#/components/schemas/LinkCode'
         domainId: {type: string, format: uuid}
         codeType: {type: string, enum: [GENERATED, CUSTOM]}
     UpdateLinkTargetRequest:
@@ -1110,7 +1373,8 @@ components:
         createdByUserId: {type: string, format: uuid}
         groupId: {type: [string, 'null'], format: uuid}
         name: {type: string}
-        linkCode: {type: string}
+        linkCode:
+          $ref: '#/components/schemas/LinkCode'
         codeType: {type: string}
         fullUrl: {type: string, format: uri}
         sortOrder: {type: integer, format: int32}
