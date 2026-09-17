@@ -17,7 +17,7 @@ public interface ChangeDomainAvailabilityUseCase {
      * @param actorUserId 发起操作且必须拥有域名管理权限的用户
      * @param domainId    要修改的域名
      * @param enabled     {@code true} 表示允许该域名继续解析短链
-     * @param requestId     可为空；非空时包含 1 至 64 个字符且随控制事件传播
+     * @param requestId     可为空；非空时是规范 UUID，随控制事件传播
      * @throws DomainNotFoundException                 域名不存在时
      * @throws DomainAvailabilityChangeDeniedException 操作者无权管理该域名时
      */

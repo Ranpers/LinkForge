@@ -4,6 +4,7 @@ import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.CreateLinkSecurityRestrictionCommand;
 import io.github.ranpers.linkforge.iam.security.application.port.in.ManageLinkSecurityRestrictionUseCase;
 import io.github.ranpers.linkforge.iam.security.domain.LinkSecurityRestriction;
+import io.github.ranpers.linkforge.webmvc.request.RequestIdContext;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -11,14 +12,11 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
-
-import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventRequestHeaders.REQUEST_ID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/link-security-restrictions")
@@ -35,8 +33,7 @@ public class LinkSecurityRestrictionController {
     public CreateLinkSecurityRestrictionResponse create(
             JwtAuthenticationToken authentication,
             @PathVariable UUID userId,
-            @Valid @RequestBody CreateLinkSecurityRestrictionRequest request,
-            @RequestHeader(value = REQUEST_ID, required = false) String requestId
+            @Valid @RequestBody CreateLinkSecurityRestrictionRequest request
     ) {
         UUID restrictionId = restrictions.create(new CreateLinkSecurityRestrictionCommand(
                 UUID.fromString(authentication.getToken().getSubject()),
@@ -47,7 +44,7 @@ public class LinkSecurityRestrictionController {
                         request.rangeEnd(),
                         request.reasonCode()
                 ),
-                ControlEventRequestId.fromNullable(requestId)
+                ControlEventRequestId.fromNullable(RequestIdContext.currentRequestId())
         ));
         return new CreateLinkSecurityRestrictionResponse(restrictionId);
     }
@@ -57,14 +54,13 @@ public class LinkSecurityRestrictionController {
     public void revoke(
             JwtAuthenticationToken authentication,
             @PathVariable UUID userId,
-            @PathVariable UUID restrictionId,
-            @RequestHeader(value = REQUEST_ID, required = false) String requestId
+            @PathVariable UUID restrictionId
     ) {
         restrictions.revoke(
                 UUID.fromString(authentication.getToken().getSubject()),
                 userId,
                 restrictionId,
-                ControlEventRequestId.fromNullable(requestId)
+                ControlEventRequestId.fromNullable(RequestIdContext.currentRequestId())
         );
     }
 }

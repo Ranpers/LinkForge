@@ -12,7 +12,7 @@ import java.util.UUID;
  * @param actorUserId  执行安全处置的用户
  * @param targetUserId 限制所作用的短链创建者
  * @param restriction  已校验时间范围不变量的限制规则
- * @param requestId      可为空；非空时包含 1 至 64 个字符且随控制事件传播
+ * @param requestId      可为空；非空时是规范 UUID，随控制事件传播
  */
 public record CreateLinkSecurityRestrictionCommand(
         UUID actorUserId,

@@ -24,7 +24,7 @@ public interface LinkSecurityRestrictionStore {
      * @param actorUserId   具备安全处置权限的非空用户标识
      * @param targetUserId  非空的目标用户标识
      * @param restrictionId 非空的目标限制标识
-     * @param requestId       可为空；非空时将原值写入控制事件
+     * @param requestId       可为空；非空时是规范 UUID，原样写入控制事件
      * @return 修改、幂等未变、目标不存在或权限拒绝结果
      */
     MutationOutcome revoke(

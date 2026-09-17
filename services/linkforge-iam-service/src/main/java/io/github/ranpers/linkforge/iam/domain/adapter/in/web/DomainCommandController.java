@@ -6,6 +6,7 @@ import io.github.ranpers.linkforge.iam.domain.application.port.in.CreateDomainUs
 import io.github.ranpers.linkforge.iam.domain.application.port.in.DomainListItem;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.UpdateDomainCommand;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.UpdateDomainUseCase;
+import io.github.ranpers.linkforge.webmvc.request.RequestIdContext;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -13,14 +14,11 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
-
-import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventRequestHeaders.REQUEST_ID;
 
 /**
  * 域名的写侧入口。
@@ -48,14 +46,13 @@ public class DomainCommandController {
     @ResponseStatus(HttpStatus.CREATED)
     public DomainListItem create(
             JwtAuthenticationToken authentication,
-            @Valid @RequestBody CreateDomainRequest request,
-            @RequestHeader(value = REQUEST_ID, required = false) String requestId
+            @Valid @RequestBody CreateDomainRequest request
     ) {
         return createDomain.create(new CreateDomainCommand(
                 UUID.fromString(authentication.getToken().getSubject()),
                 request.domain(),
                 request.name(),
-                ControlEventRequestId.fromNullable(requestId)
+                ControlEventRequestId.fromNullable(RequestIdContext.currentRequestId())
         ));
     }
 

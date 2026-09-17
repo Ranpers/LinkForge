@@ -22,7 +22,7 @@ public interface DomainStore {
      * @param actorUserId 操作者；需具备 {@code domain:create} 且账号状态正常
      * @param host        已归一化的主机名
      * @param name        可为空的展示名称
-     * @param requestId     可为空；非空时写入控制事件
+     * @param requestId     可为空；非空时是规范 UUID，写入控制事件
      * @return 创建结果；{@link CreationResult#CREATED} 时 {@link CreationOutcome#created()} 非空
      */
     CreationOutcome create(UUID actorUserId, String host, String name, ControlEventRequestId requestId);

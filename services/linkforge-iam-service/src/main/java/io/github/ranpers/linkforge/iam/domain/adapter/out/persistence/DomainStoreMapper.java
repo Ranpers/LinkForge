@@ -12,7 +12,7 @@ public interface DomainStoreMapper {
             @Param("actorUserId") UUID actorUserId,
             @Param("host") String host,
             @Param("name") String name,
-            @Param("requestId") String requestId
+            @Param("requestId") UUID requestId
     );
 
     Integer update(

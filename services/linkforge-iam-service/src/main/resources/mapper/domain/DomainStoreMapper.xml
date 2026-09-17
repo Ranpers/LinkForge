@@ -63,7 +63,7 @@
                    1,
                    'DOMAIN:' || inserted.id::text,
                    inserted.id::text,
-                   #{requestId,jdbcType=VARCHAR},
+                   #{requestId},
                    jsonb_build_object(
                        'eventId', event_id::text,
                        'eventType', 'DomainAvailabilityChanged',
@@ -71,7 +71,7 @@
                        'streamKey', 'DOMAIN:' || inserted.id::text,
                        'revision', inserted.state_revision,
                        'occurredAt', inserted.created_at,
-                       'requestId', #{requestId,jdbcType=VARCHAR},
+                       'requestId', #{requestId},
                        'payload', jsonb_build_object(
                            'domainId', inserted.id::text,
                            'host', inserted.domain,

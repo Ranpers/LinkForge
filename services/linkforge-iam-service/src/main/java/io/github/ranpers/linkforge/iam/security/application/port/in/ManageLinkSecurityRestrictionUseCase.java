@@ -28,7 +28,7 @@ public interface ManageLinkSecurityRestrictionUseCase {
      * @param actorUserId   执行安全处置的用户
      * @param targetUserId  限制所作用的短链创建者
      * @param restrictionId 要撤销的限制
-     * @param requestId       可为空；非空时包含 1 至 64 个字符且随控制事件传播
+     * @param requestId       可为空；非空时是规范 UUID，随控制事件传播
      * @throws SecurityTargetUserNotFoundException      目标用户不存在时
      * @throws LinkSecurityRestrictionNotFoundException 限制不存在或不属于目标用户时
      * @throws SecurityDispositionDeniedException       操作者无安全处置权限时

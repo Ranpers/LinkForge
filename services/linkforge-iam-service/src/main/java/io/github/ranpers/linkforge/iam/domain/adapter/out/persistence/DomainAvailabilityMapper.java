@@ -11,6 +11,6 @@ public interface DomainAvailabilityMapper {
             @Param("actorUserId") UUID actorUserId,
             @Param("domainId") UUID domainId,
             @Param("enabled") boolean enabled,
-            @Param("requestId") String requestId
+            @Param("requestId") UUID requestId
     );
 }
