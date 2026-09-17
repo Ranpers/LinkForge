@@ -84,6 +84,17 @@ docker compose --env-file deploy/compose/.env -f deploy/compose/docker-compose.y
 | `http://localhost:18080` | Nacos 控制台                |
 | `http://localhost:3000`  | Grafana（Trace/Metric/Log） |
 
+公开 HTTP API 的 OpenAPI 3.1 契约由 Gateway 提供：
+
+```text
+http://localhost:8080/openapi/linkforge-public-api-v1.yaml
+```
+
+用户注册使用 `POST /api/v1/users`。API 错误统一返回
+`application/problem+json`，其中 `code` 是供客户端判断的稳定错误码，`traceId`
+与响应头 `X-Trace-Id` 一致。原型阶段数据库结构以当前 `V1__baseline.sql`
+为准，结构发生变化后应重建本地数据卷。
+
 检查容器和就绪状态：
 
 ```bash

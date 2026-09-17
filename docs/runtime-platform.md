@@ -15,6 +15,11 @@ Gateway 只暴露明确的公共接口：
 
 `/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。认证、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。
 
+Gateway 不信任客户端传入的 `X-Trace-Id`，而是在安全过滤器前生成新的关联标识，
+传递给下游并写入响应头。IAM 与 Link Service 保留可信上游传入的标识；缺失时自行生成。
+所有 HTTP API 错误统一使用 `application/problem+json`，稳定业务码位于 `code` 字段。
+公开接口契约位于 `/openapi/linkforge-public-api-v1.yaml`。
+
 如果 Gateway 位于受控反向代理之后，应在网络边界清洗转发头，再根据代理拓扑调整 `server.forward-headers-strategy` 和限流键解析逻辑。
 
 Gateway 与 Link Service 同时校验访问令牌的签发者和 `linkforge-api` 受众。IAM 生成的所有访问令牌都写入该受众；OIDC ID Token 保持协议规定的客户端受众。IAM 签名私钥使用 `IAM_SIGNING_KEY_ENCRYPTION_KEY` 进行 AES-256-GCM 加密后再写入数据库，只接受当前 `enc:v1` 密文格式。该环境变量必须稳定保存，不能在已有数据卷上重新生成。
