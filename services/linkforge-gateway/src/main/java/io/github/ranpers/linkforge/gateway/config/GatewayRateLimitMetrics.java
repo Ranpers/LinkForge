@@ -31,7 +31,7 @@ public final class GatewayRateLimitMetrics {
      *
      * @param routeId 路由 ID
      * @param decision 判定结果
-     * @param failurePolicy 该路由的故障策略；只有降级被放行时才额外累加 {@code fail_open}
+     * @param failurePolicy 该路由的故障策略；任何降级判定被放行时都额外累加 {@code fail_open}
      */
     public void record(
             String routeId,
@@ -39,8 +39,7 @@ public final class GatewayRateLimitMetrics {
             RateLimitFailurePolicy failurePolicy
     ) {
         registry.counter(PREFIX + metricName(decision), ROUTE_TAG, routeId).increment();
-        if (decision == RateLimitDecision.UNAVAILABLE
-                && failurePolicy == RateLimitFailurePolicy.ALLOW) {
+        if (decision.isDegraded() && failurePolicy == RateLimitFailurePolicy.ALLOW) {
             registry.counter(PREFIX + "fail_open", ROUTE_TAG, routeId).increment();
         }
     }
@@ -59,6 +58,7 @@ public final class GatewayRateLimitMetrics {
             case ALLOWED -> "allowed";
             case DENIED -> "denied";
             case UNAVAILABLE -> "unavailable";
+            case UNKNOWN -> "unknown";
         };
     }
 }

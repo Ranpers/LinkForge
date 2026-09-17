@@ -45,10 +45,10 @@ public class GatewayRouteConfiguration {
      * <p>{@code /internal/**} 故意没有路由，IAM 内部授权接口只能由服务网络访问。</p>
      *
      * @implNote 路由级限流故障策略在这里显式给出，见 {@link RateLimitFailurePolicy}。注册、认证与
-     * 业务管理路由取 {@code REJECT}：它们的限流一旦失效，暴露的是口令爆破与越权尝试面，此时可用性
-     * 让位于保护。跳转路由取 {@code ALLOW}：它是匿名入口，本身没有可扩大的攻击面，被限流保护的
-     * 只是下游容量，而拒绝降级会让全部短链同时失效。公开契约与健康检查不由路由提供，而是网关
-     * 本地处理，因此不在限流范围内。
+     * 业务管理路由取 {@code REJECT}：相比短时降低可用性，失去这些接口的请求保护、扩大口令爆破与
+     * 越权尝试面是更不可接受的风险。跳转路由取 {@code ALLOW}：它同样有流量洪泛、短码枚举与下游
+     * 容量风险，被限流保护的正是这些，这里选择可用性优先，因为拒绝降级会让全部短链同时失效。
+     * 公开契约与健康检查不由路由提供，而是网关本地处理，因此不在限流范围内。
      */
     @Bean
     RouteLocator linkForgeRoutes(
@@ -60,6 +60,10 @@ public class GatewayRouteConfiguration {
             GatewayProblemWriter problemWriter,
             GatewayRateLimitMetrics rateLimitMetrics
     ) {
+        requireInspectableDegradation(authenticationRateLimiter);
+        requireInspectableDegradation(apiRateLimiter);
+        requireInspectableDegradation(redirectRateLimiter);
+
         GatewayFilter authenticationLimit = rateLimit(
                 authenticationRateLimiter,
                 gatewayClientKeyResolver,
@@ -122,6 +126,35 @@ public class GatewayRouteConfiguration {
 
     private static RedisRateLimiter rateLimiter(GatewayRateLimitProperties.Limit limit) {
         return new RedisRateLimiter(limit.replenishRate(), limit.burstCapacity());
+    }
+
+    /**
+     * 断言限流器的降级标记仍可被识别，否则拒绝启动。
+     *
+     * @param rateLimiter 待检查的限流器
+     * @throws IllegalStateException 响应头已被关闭或重命名时
+     * @implNote {@link RateLimitDecision} 依赖框架在降级时写出的 {@code X-RateLimit-Remaining: -1}。
+     * 关掉响应头或改写头名称都会让降级无法识别，认证与业务管理路由会从拒绝降级静默退化成放行降级，
+     * 也就是保护消失而无人报警。宁可让配置错误在启动时暴露，也不要留到运行期才发现。
+     * <p>
+     * 检查放在这里而不是 {@link #rateLimiter} 里：{@code RedisRateLimiter} 自身带
+     * {@code @ConfigurationProperties}，属性绑定发生在本方法返回之后，构造点上的断言看不到
+     * {@code spring.cloud.gateway.redis-rate-limiter.*} 的影响。
+     */
+    private static void requireInspectableDegradation(RedisRateLimiter rateLimiter) {
+        if (!rateLimiter.isIncludeHeaders()) {
+            throw new IllegalStateException(
+                    "限流器必须保留响应头：include-headers 为 false 时降级标记不可见，"
+                            + "拒绝降级会静默退化成放行降级"
+            );
+        }
+        if (!RedisRateLimiter.REMAINING_HEADER.equals(rateLimiter.getRemainingHeader())) {
+            throw new IllegalStateException(
+                    "剩余令牌响应头必须保持默认名称 " + RedisRateLimiter.REMAINING_HEADER
+                            + "，当前为 " + rateLimiter.getRemainingHeader()
+                            + "：改名后降级标记不可见，拒绝降级会静默退化成放行降级"
+            );
+        }
     }
 
     private static GatewayFilter rateLimit(
