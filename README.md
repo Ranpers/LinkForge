@@ -90,7 +90,8 @@ docker compose --env-file deploy/compose/.env -f deploy/compose/docker-compose.y
 http://localhost:8080/openapi/linkforge-public-api-v1.yaml
 ```
 
-用户注册使用 `POST /api/v1/users`。API 错误统一返回
+契约中的路径都相对于 Gateway 地址，不声明固定的服务器地址，调用方按实际部署的主机与
+协议解析。用户注册使用 `POST /api/v1/users`。API 错误统一返回
 `application/problem+json`，其中 `code` 是供客户端判断的稳定错误码，`requestId`
 与响应头 `X-Request-Id` 一致；该标识用于串联同一次调用，与 OpenTelemetry 传播的
 `traceparent` 是两个互不相关的取值。原型阶段数据库结构以当前 `V1__baseline.sql`

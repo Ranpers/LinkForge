@@ -49,7 +49,7 @@ public class ShortLinkCreationController {
                                 ? ShortCodeRequest.auto()
                                 : ShortCodeRequest.custom(request.linkCode()),
                         request.fullUrl(),
-                        request.sortOrder(),
+                        request.sortOrder() == null ? 0 : request.sortOrder(),
                         request.domainId(),
                         request.expiresAt(),
                         idempotencyKey

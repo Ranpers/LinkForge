@@ -19,7 +19,15 @@ Gateway 不信任客户端传入的 `X-Request-Id`，而是在安全过滤器前
 传递给下游并写入响应头。IAM 与 Link Service 只沿用规范 UUID 形式的入站标识，其余情况
 自行生成；Link Service 调用 IAM 时会原样传递当前标识，使跨服务调用共用同一个值。
 所有 HTTP API 错误统一使用 `application/problem+json`，稳定业务码位于 `code` 字段。
-公开接口契约位于 `/openapi/linkforge-public-api-v1.yaml`。
+公开接口契约位于 `/openapi/linkforge-public-api-v1.yaml`，其中的路径都相对于 Gateway
+地址，不声明固定的服务器地址。
+
+Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 403 来自安全链，
+404 表示没有匹配的路由，405 由下游服务判定后透传（Gateway 按路径转发，无法区分 405
+与 404），429 表示超出 Redis 令牌桶配额，503 表示没有可用的下游实例，504 表示下游响应
+超时。超时阈值由 `spring.cloud.gateway.server.webflux.httpclient.response-timeout`
+控制，默认 10 秒，可用 `GATEWAY_RESPONSE_TIMEOUT` 覆盖；未配置时 504 分支不会触发。
+这些响应与业务错误共用同一个 `requestId`。
 
 如果 Gateway 位于受控反向代理之后，应在网络边界清洗转发头，再根据代理拓扑调整 `server.forward-headers-strategy` 和限流键解析逻辑。
 

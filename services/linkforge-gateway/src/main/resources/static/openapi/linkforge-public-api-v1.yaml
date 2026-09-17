@@ -2,9 +2,9 @@ openapi: 3.1.0
 info:
   title: LinkForge Public API
   version: 1.0.0
-  description: Gateway 对外公开的用户、域名、短链、分组及跳转接口。
-servers:
-  - url: http://localhost:8080
+  description: >
+    Gateway 对外公开的用户、域名、短链、分组及跳转接口。所有路径都相对于提供本文档的
+    网关地址，调用方按实际部署的主机与协议解析，因此这里不声明固定的 servers 条目。
 security:
   - bearerAuth: []
 tags:
@@ -31,16 +31,24 @@ paths:
         '201':
           description: 注册成功
           headers:
-            X-Trace-Id:
-              $ref: '#/components/headers/TraceId'
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RegisterResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     get:
       tags: [Users]
       operationId: listUsers
@@ -61,6 +69,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/users/{userId}/security-status:
     patch:
       tags: [Security]
@@ -83,8 +99,16 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/users/{userId}/link-security-restrictions:
     post:
       tags: [Security]
@@ -111,6 +135,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/users/{userId}/link-security-restrictions/{restrictionId}:
     delete:
       tags: [Security]
@@ -131,6 +163,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/domains:
     get:
       tags: [Domains]
@@ -155,6 +195,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       tags: [Domains]
       operationId: createDomain
@@ -176,8 +224,16 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/domains/{domainId}:
     patch:
       tags: [Domains]
@@ -200,6 +256,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/domains/{domainId}/availability:
     patch:
       tags: [Domains]
@@ -222,6 +286,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/links:
     post:
       tags: [Links]
@@ -252,10 +324,18 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     get:
       tags: [Links]
       operationId: listShortLinks
@@ -294,6 +374,14 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/links/{linkId}/target:
     patch:
       tags: [Links]
@@ -316,8 +404,16 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/links/{linkId}/availability:
     patch:
       tags: [Links]
@@ -338,8 +434,16 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/links/{linkId}:
     delete:
       tags: [Links]
@@ -354,6 +458,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/groups:
     get:
       tags: [Groups]
@@ -369,6 +481,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GroupPage'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       tags: [Groups]
       operationId: createGroup
@@ -388,8 +508,16 @@ paths:
                 $ref: '#/components/schemas/Group'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /api/v1/groups/{groupId}:
     get:
       tags: [Groups]
@@ -406,6 +534,14 @@ paths:
                 $ref: '#/components/schemas/Group'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     patch:
       tags: [Groups]
       operationId: updateGroup
@@ -425,8 +561,16 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       tags: [Groups]
       operationId: deleteGroup
@@ -438,6 +582,14 @@ paths:
           description: 删除成功
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /r/{linkCode}:
     get:
       tags: [Redirect]
@@ -458,12 +610,20 @@ paths:
               schema:
                 type: string
                 format: uri
-            X-Trace-Id:
-              $ref: '#/components/headers/TraceId'
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
         '503':
           $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 components:
   securitySchemes:
     bearerAuth:
@@ -471,11 +631,14 @@ components:
       scheme: bearer
       bearerFormat: JWT
   headers:
-    TraceId:
-      description: 服务端生成的请求关联标识
+    RequestId:
+      description: >
+        服务端生成的请求关联标识，与问题响应里的 requestId 属性取值相同。
+        网关是信任边界，不沿用调用方送来的取值，因此它总是新生成的规范 UUID。
+        该标识只用于串联日志与错误响应，与 OpenTelemetry 传播的 traceparent 无关。
       schema:
         type: string
-        maxLength: 64
+        format: uuid
   parameters:
     UserId:
       name: userId
@@ -549,8 +712,8 @@ components:
         WWW-Authenticate:
           schema:
             type: string
-        X-Trace-Id:
-          $ref: '#/components/headers/TraceId'
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
@@ -579,10 +742,34 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
+    MethodNotAllowed:
+      description: 路径存在但该 HTTP 方法不受支持
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: 超出该主体的请求配额
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalError:
+      description: 服务端未能处理请求
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    GatewayTimeout:
+      description: 上游服务响应超时
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
   schemas:
     Problem:
       type: object
-      required: [type, title, status, code, detail]
+      required: [type, title, status, code, detail, requestId]
       properties:
         type:
           type: string
@@ -595,8 +782,9 @@ components:
           type: string
         detail:
           type: string
-        traceId:
+        requestId:
           type: string
+          format: uuid
         reasonCode:
           type: string
         decisionId:
@@ -711,13 +899,29 @@ components:
         hasMore: {type: boolean}
     CreateShortLinkRequest:
       type: object
-      required: [name, fullUrl, sortOrder, domainId]
+      required: [name, fullUrl, domainId]
       properties:
         groupId: {type: [string, 'null'], format: uuid}
         name: {type: string, minLength: 1, maxLength: 64}
-        linkCode: {type: [string, 'null']}
-        fullUrl: {type: string, format: uri, maxLength: 2048}
-        sortOrder: {type: integer, format: int32}
+        linkCode:
+          type: [string, 'null']
+          minLength: 4
+          maxLength: 32
+          pattern: '^[A-Za-z0-9_-]{4,32}$'
+          description: >
+            自定义短码；省略时为 null，由系统分配一个 10 位 Base62 短码。
+            不区分大小写地拒绝系统保留词：actuator、api、error、health、login、oauth2、
+            swagger-ui、v3。
+        fullUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: 绝对 HTTP(S) 目标地址；必须包含主机名，长度不超过 2048。
+        sortOrder:
+          type: [integer, 'null']
+          format: int32
+          default: 0
+          description: 同组展示排序值；省略时为 null，按 0 处理。取值范围为任意 32 位有符号整数。
         domainId: {type: string, format: uuid}
         expiresAt: {type: [string, 'null'], format: date-time}
     CreateShortLinkResponse:
@@ -732,7 +936,11 @@ components:
       type: object
       required: [fullUrl]
       properties:
-        fullUrl: {type: string, format: uri, maxLength: 2048}
+        fullUrl:
+          type: string
+          format: uri
+          maxLength: 2048
+          description: 绝对 HTTP(S) 目标地址；必须包含主机名，长度不超过 2048。
     ShortLink:
       type: object
       required: [id, createdByUserId, name, linkCode, codeType, fullUrl, sortOrder, domainId, status, revision, createdAt, updatedAt]
@@ -767,13 +975,20 @@ components:
       required: [name]
       properties:
         name: {type: string, minLength: 1, maxLength: 64}
-        sortOrder: {type: [integer, 'null'], minimum: 0}
+        sortOrder:
+          type: [integer, 'null']
+          minimum: 0
+          default: 0
+          description: 展示排序提示，须为非负数；省略时为 null，按 0 处理。
     UpdateGroupRequest:
       type: object
       required: [name]
       properties:
         name: {type: string, minLength: 1, maxLength: 64}
-        sortOrder: {type: [integer, 'null'], minimum: 0}
+        sortOrder:
+          type: [integer, 'null']
+          minimum: 0
+          description: 新的展示排序提示，须为非负数；省略时为 null，保留原值。
     Group:
       type: object
       required: [id, name, sortOrder, createdAt, updatedAt]
