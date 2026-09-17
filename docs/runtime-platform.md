@@ -15,6 +15,13 @@ Gateway 只暴露明确的公共接口：
 
 `/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。认证、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。
 
+令牌桶依赖的 Redis 不可用时如何处置按路由显式声明，不从路由 ID 推断。注册、认证与业务管理
+路由拒绝并返回 503：这些接口的限流一旦失效，暴露的是口令爆破与越权尝试面，让一次存储抖动
+放大成整站不可用是更坏的取舍。跳转路由按放行处理：它是匿名入口，本身没有可扩大的攻击面，
+而拒绝降级会让全部短链同时失效。判定结果按路由计入 `linkforge.gateway.rate_limit.allowed`、
+`.denied`、`.unavailable`，降级被放行时另计 `.fail_open`，无法确定限流主体时计 `.empty_key`。
+这些指标只用路由 ID 作为标签，不记录限流主体、客户端地址、请求 ID 或请求路径。
+
 Gateway 不信任客户端传入的 `X-Request-Id`，而是在安全过滤器前生成新的关联标识，
 传递给下游并写入响应头。IAM 与 Link Service 只沿用规范 UUID 形式的入站标识，其余情况
 自行生成；Link Service 调用 IAM 时会原样传递当前标识，使跨服务调用共用同一个值。
@@ -27,7 +34,8 @@ Gateway 不信任客户端传入的 `X-Request-Id`，而是在安全过滤器前
 
 Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 403 来自安全链，
 404 表示没有匹配的路由，405 由下游服务判定后透传（Gateway 按路径转发，无法区分 405
-与 404），429 表示超出 Redis 令牌桶配额，503 表示没有可用的下游实例，504 表示下游响应
+与 404），429 表示超出 Redis 令牌桶配额，503 表示没有可用的下游实例，或限流判定未能完成
+（后者业务码为 `RATE_LIMITER_UNAVAILABLE`，只出现在拒绝降级的路由上），504 表示下游响应
 超时。超时阈值由 `spring.cloud.gateway.server.webflux.httpclient.response-timeout`
 控制，默认 10 秒，可用 `GATEWAY_RESPONSE_TIMEOUT` 覆盖；未配置时 504 分支不会触发。
 下游服务另外会返回 400、406、409、415：406 表示无法按 `Accept` 头生成响应（无响应体，见上），
@@ -40,9 +48,10 @@ Gateway 自身会返回 401、403、404、405、429、500、503、504：401 与 
 限流的四个 `X-RateLimit-Remaining`、`X-RateLimit-Replenish-Rate`、`X-RateLimit-Burst-Capacity`
 和 `X-RateLimit-Requested-Tokens` 响应头在放行与拒绝两种结果上都会返回，因此公开契约把它们
 与 `X-Request-Id` 一起声明在全部成功响应和 429 上；401 不声明，因为认证失败可能发生在限流
-过滤器之前。这些响应头通过 CORS `Access-Control-Expose-Headers` 暴露给浏览器脚本。不返回
-`Retry-After`：令牌桶按速率补充，不产生可供换算的固定等待时长。`X-RateLimit-Remaining` 取值
-为 -1 表示本次限流判定已经降级（令牌桶依赖的存储不可用，网关按放行处理），该取值不反映真实余量。
+过滤器之前，降级拒绝产生的 503 也不声明，因为那不是一个配额结论。这些响应头通过 CORS
+`Access-Control-Expose-Headers` 暴露给浏览器脚本。不返回 `Retry-After`：令牌桶按速率补充，
+不产生可供换算的固定等待时长。`X-RateLimit-Remaining` 取值为 -1 表示本次限流判定已经降级
+（令牌桶依赖的存储不可用），该取值不反映真实余量；它只在降级仍被放行时出现。
 
 如果 Gateway 位于受控反向代理之后，应在网络边界清洗转发头，再根据代理拓扑调整 `server.forward-headers-strategy` 和限流键解析逻辑。
 

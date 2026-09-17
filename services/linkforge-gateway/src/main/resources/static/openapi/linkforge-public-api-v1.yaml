@@ -1111,7 +1111,7 @@ components:
           schema:
             $ref: '#/components/schemas/Problem'
     Unavailable:
-      description: 依赖服务暂时不可用
+      description: 依赖服务暂时不可用，或限流判定未能完成（后者业务码为 RATE_LIMITER_UNAVAILABLE）
       headers:
         X-Request-Id:
           $ref: '#/components/headers/RequestId'

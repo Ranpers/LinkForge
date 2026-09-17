@@ -13,15 +13,18 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 
 /**
- * 在超出配额时返回问题响应的限流过滤器。
+ * 按路由的令牌桶判定结果写入问题响应的限流过滤器。
  *
  * @implNote 不能沿用 {@code RequestRateLimiter} 网关过滤器：它在拒绝请求时先设置状态码再结束响应，
  * 响应已经提交，调用方只能收到一个没有响应体的 429。这里改为在写入响应体之前完成判定。
  * <p>
- * 令牌桶在 Redis 不可用时放行而不是拒绝，见
- * {@link org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter} 的降级分支。
- * 这是刻意的取舍：把依赖故障改成 503 会让 Redis 成为全部流量的硬依赖，一次抖动就等于整站不可用。
- * 故障只写进服务端 ERROR 日志，不改变调用方看到的结果，因此本过滤器不额外包装该异常。
+ * 令牌桶依赖的存储不可用时如何处置由构造时传入的 {@link RateLimitFailurePolicy} 决定，过滤器
+ * 不自行取舍：公开跳转路由放行，注册、登录与业务管理路由返回 503。判定结果统一来自
+ * {@link RateLimitDecision}，过滤器只按枚举分支，不再解读响应头。
+ * <p>
+ * 降级被放行时仍会把框架给出的四个限流响应头写回响应，其中 {@code X-RateLimit-Remaining} 为 -1，
+ * 调用方据此可以分辨“确实没超限”和“限流已降级”。降级被拒绝时相反：那不是一个配额结论，
+ * 503 问题响应只带 {@code X-Request-Id}，公开契约因此不必为它声明限流响应头。
  */
 public final class GatewayRateLimitFilter implements GatewayFilter {
 
@@ -30,15 +33,21 @@ public final class GatewayRateLimitFilter implements GatewayFilter {
     private final RateLimiter<?> rateLimiter;
     private final KeyResolver keyResolver;
     private final GatewayProblemWriter problemWriter;
+    private final GatewayRateLimitMetrics metrics;
+    private final RateLimitFailurePolicy failurePolicy;
 
     public GatewayRateLimitFilter(
             RateLimiter<?> rateLimiter,
             KeyResolver keyResolver,
-            GatewayProblemWriter problemWriter
+            GatewayProblemWriter problemWriter,
+            GatewayRateLimitMetrics metrics,
+            RateLimitFailurePolicy failurePolicy
     ) {
         this.rateLimiter = rateLimiter;
         this.keyResolver = keyResolver;
         this.problemWriter = problemWriter;
+        this.metrics = metrics;
+        this.failurePolicy = failurePolicy;
     }
 
     @Override
@@ -52,12 +61,15 @@ public final class GatewayRateLimitFilter implements GatewayFilter {
                 .defaultIfEmpty(Optional.empty())
                 .flatMap(key -> key
                         .map(resolved -> limit(exchange, chain, routeId, resolved))
-                        .orElseGet(() -> problemWriter.write(
-                                exchange,
-                                HttpStatus.FORBIDDEN,
-                                "ACCESS_DENIED",
-                                "无法确定限流主体"
-                        )));
+                        .orElseGet(() -> {
+                            metrics.recordEmptyKey(routeId);
+                            return problemWriter.write(
+                                    exchange,
+                                    HttpStatus.FORBIDDEN,
+                                    "ACCESS_DENIED",
+                                    "无法确定限流主体"
+                            );
+                        }));
     }
 
     private Mono<Void> limit(
@@ -67,17 +79,28 @@ public final class GatewayRateLimitFilter implements GatewayFilter {
             String key
     ) {
         return rateLimiter.isAllowed(routeId, key).flatMap(response -> {
+            RateLimitDecision decision = RateLimitDecision.of(response);
+            metrics.record(routeId, decision, failurePolicy);
+            if (decision == RateLimitDecision.UNAVAILABLE
+                    && failurePolicy == RateLimitFailurePolicy.REJECT) {
+                return problemWriter.write(
+                        exchange,
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "RATE_LIMITER_UNAVAILABLE",
+                        "请求保护服务暂时不可用"
+                );
+            }
             response.getHeaders().forEach((name, value) ->
                     exchange.getResponse().getHeaders().set(name, value));
-            if (response.isAllowed()) {
-                return chain.filter(exchange);
+            if (decision == RateLimitDecision.DENIED) {
+                return problemWriter.write(
+                        exchange,
+                        HttpStatus.TOO_MANY_REQUESTS,
+                        "RATE_LIMIT_EXCEEDED",
+                        "请求过于频繁"
+                );
             }
-            return problemWriter.write(
-                    exchange,
-                    HttpStatus.TOO_MANY_REQUESTS,
-                    "RATE_LIMIT_EXCEEDED",
-                    "请求过于频繁"
-            );
+            return chain.filter(exchange);
         });
     }
 }

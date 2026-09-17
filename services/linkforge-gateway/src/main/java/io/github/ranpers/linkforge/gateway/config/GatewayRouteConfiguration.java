@@ -43,6 +43,12 @@ public class GatewayRouteConfiguration {
      * 声明唯一允许从公网入口到达的路由。
      *
      * <p>{@code /internal/**} 故意没有路由，IAM 内部授权接口只能由服务网络访问。</p>
+     *
+     * @implNote 路由级限流故障策略在这里显式给出，见 {@link RateLimitFailurePolicy}。注册、认证与
+     * 业务管理路由取 {@code REJECT}：它们的限流一旦失效，暴露的是口令爆破与越权尝试面，此时可用性
+     * 让位于保护。跳转路由取 {@code ALLOW}：它是匿名入口，本身没有可扩大的攻击面，被限流保护的
+     * 只是下游容量，而拒绝降级会让全部短链同时失效。公开契约与健康检查不由路由提供，而是网关
+     * 本地处理，因此不在限流范围内。
      */
     @Bean
     RouteLocator linkForgeRoutes(
@@ -51,13 +57,30 @@ public class GatewayRouteConfiguration {
             @Qualifier("authenticationRateLimiter") RedisRateLimiter authenticationRateLimiter,
             @Qualifier("apiRateLimiter") RedisRateLimiter apiRateLimiter,
             @Qualifier("redirectRateLimiter") RedisRateLimiter redirectRateLimiter,
-            GatewayProblemWriter problemWriter
+            GatewayProblemWriter problemWriter,
+            GatewayRateLimitMetrics rateLimitMetrics
     ) {
-        GatewayFilter authenticationLimit =
-                rateLimit(authenticationRateLimiter, gatewayClientKeyResolver, problemWriter);
-        GatewayFilter apiLimit = rateLimit(apiRateLimiter, gatewayClientKeyResolver, problemWriter);
-        GatewayFilter redirectLimit =
-                rateLimit(redirectRateLimiter, gatewayClientKeyResolver, problemWriter);
+        GatewayFilter authenticationLimit = rateLimit(
+                authenticationRateLimiter,
+                gatewayClientKeyResolver,
+                problemWriter,
+                rateLimitMetrics,
+                RateLimitFailurePolicy.REJECT
+        );
+        GatewayFilter apiLimit = rateLimit(
+                apiRateLimiter,
+                gatewayClientKeyResolver,
+                problemWriter,
+                rateLimitMetrics,
+                RateLimitFailurePolicy.REJECT
+        );
+        GatewayFilter redirectLimit = rateLimit(
+                redirectRateLimiter,
+                gatewayClientKeyResolver,
+                problemWriter,
+                rateLimitMetrics,
+                RateLimitFailurePolicy.ALLOW
+        );
 
         return builder.routes()
                 .route("iam-registration", route -> route
@@ -104,8 +127,16 @@ public class GatewayRouteConfiguration {
     private static GatewayFilter rateLimit(
             RateLimiter<?> rateLimiter,
             KeyResolver keyResolver,
-            GatewayProblemWriter problemWriter
+            GatewayProblemWriter problemWriter,
+            GatewayRateLimitMetrics metrics,
+            RateLimitFailurePolicy failurePolicy
     ) {
-        return new GatewayRateLimitFilter(rateLimiter, keyResolver, problemWriter);
+        return new GatewayRateLimitFilter(
+                rateLimiter,
+                keyResolver,
+                problemWriter,
+                metrics,
+                failurePolicy
+        );
     }
 }
