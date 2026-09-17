@@ -1,5 +1,7 @@
 package io.github.ranpers.linkforge.link.resolution.adapter.out.cache;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.DomainRuntimeState;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeCache;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeFacts;
@@ -92,16 +94,27 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
     private final StringRedisTemplate redis;
     private final ObjectMapper objectMapper;
     private final ResolutionCacheProperties properties;
+    private final Counter mutationBeginFailures;
+    private final Counter mutationCompletionSucceeded;
+    private final Counter mutationCompletionSuperseded;
+    private final Counter mutationCompletionFailures;
+    private final Counter mutationCancellationSuperseded;
 
     public RedisLinkRuntimeCache(
             StringRedisTemplate redis,
             ObjectMapper objectMapper,
-            ResolutionCacheProperties properties
+            ResolutionCacheProperties properties,
+            MeterRegistry meterRegistry
     ) {
         properties.validate();
         this.redis = redis;
         this.objectMapper = objectMapper;
         this.properties = properties;
+        this.mutationBeginFailures = mutationCounter(meterRegistry, "begin_failed");
+        this.mutationCompletionSucceeded = mutationCounter(meterRegistry, "completed");
+        this.mutationCompletionSuperseded = mutationCounter(meterRegistry, "superseded");
+        this.mutationCompletionFailures = mutationCounter(meterRegistry, "complete_failed");
+        this.mutationCancellationSuperseded = mutationCounter(meterRegistry, "cancel_superseded");
     }
 
     @Override
@@ -257,6 +270,7 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
             }
             return token;
         } catch (RuntimeException exception) {
+            mutationBeginFailures.increment();
             throw new RuntimeCacheMutationException("无法建立运行时缓存写屏障", exception);
         }
     }
@@ -270,7 +284,7 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
     ) {
         try {
             String json = objectMapper.writeValueAsString(value);
-            redis.execute(
+            Long result = redis.execute(
                     COMPLETE_MUTATION,
                     List.of(key, mutationKey(key)),
                     Long.toString(revision),
@@ -278,14 +292,34 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
                     Long.toString(ttlMillis(ttl)),
                     token
             );
+            if (result == null) {
+                throw new IllegalStateException("Redis 未返回写屏障完成结果");
+            }
+            if (result == 0L) {
+                mutationCompletionSuperseded.increment();
+                log.debug("Redis 写屏障已由更新事务接管: key={}", key);
+                return;
+            }
+            if (result != 1L) {
+                throw new IllegalStateException("Redis 返回未知写屏障完成结果: " + result);
+            }
+            mutationCompletionSucceeded.increment();
         } catch (RuntimeException exception) {
+            mutationCompletionFailures.increment();
             throw new RuntimeCacheMutationException("无法完成运行时缓存变更", exception);
         }
     }
 
     private void cancelMutation(String key, String token) {
         try {
-            redis.execute(CANCEL_MUTATION, List.of(mutationKey(key)), token);
+            Long result = redis.execute(CANCEL_MUTATION, List.of(mutationKey(key)), token);
+            if (result == null) {
+                throw new IllegalStateException("Redis 未返回写屏障撤销结果");
+            }
+            if (result == 0L) {
+                mutationCancellationSuperseded.increment();
+                log.debug("Redis 写屏障撤销已失去所有权: key={}", key);
+            }
         } catch (RuntimeException exception) {
             throw new RuntimeCacheMutationException("无法释放运行时缓存写屏障", exception);
         }
@@ -313,5 +347,12 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
 
     private static String mutationKey(String key) {
         return key + ":mutation";
+    }
+
+    private static Counter mutationCounter(MeterRegistry meterRegistry, String result) {
+        return Counter.builder("linkforge.cache.mutation.operations")
+                .description("Redis runtime-cache mutation fence outcomes")
+                .tag("result", result)
+                .register(meterRegistry);
     }
 }
