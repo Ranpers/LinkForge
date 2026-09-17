@@ -1,5 +1,8 @@
 package io.github.ranpers.linkforge.link.query.application.port.in;
 
+import io.github.ranpers.linkforge.webmvc.validation.InvalidCursorException;
+import io.github.ranpers.linkforge.webmvc.validation.InvalidQueryParameterException;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
@@ -21,10 +24,10 @@ public record ListShortLinksQuery(
     public ListShortLinksQuery {
         Objects.requireNonNull(actorUserId, "actorUserId");
         if ((cursorCreatedAt == null) != (cursorId == null)) {
-            throw new IllegalArgumentException("cursorCreatedAt 与 cursorId 必须同时存在");
+            throw new InvalidCursorException("cursorCreatedAt 与 cursorId 必须同时存在");
         }
         if (pageSize < 1 || pageSize > 100) {
-            throw new IllegalArgumentException("pageSize 必须在 1 到 100 之间");
+            throw new InvalidQueryParameterException("pageSize 必须在 1 到 100 之间");
         }
         searchTerm = normalize(searchTerm);
     }

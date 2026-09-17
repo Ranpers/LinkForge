@@ -2,7 +2,9 @@ package io.github.ranpers.linkforge.gateway.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.filter.ratelimit.RateLimiter;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
@@ -48,18 +50,21 @@ public class GatewayRouteConfiguration {
             KeyResolver gatewayClientKeyResolver,
             @Qualifier("authenticationRateLimiter") RedisRateLimiter authenticationRateLimiter,
             @Qualifier("apiRateLimiter") RedisRateLimiter apiRateLimiter,
-            @Qualifier("redirectRateLimiter") RedisRateLimiter redirectRateLimiter
+            @Qualifier("redirectRateLimiter") RedisRateLimiter redirectRateLimiter,
+            GatewayProblemWriter problemWriter
     ) {
+        GatewayFilter authenticationLimit =
+                rateLimit(authenticationRateLimiter, gatewayClientKeyResolver, problemWriter);
+        GatewayFilter apiLimit = rateLimit(apiRateLimiter, gatewayClientKeyResolver, problemWriter);
+        GatewayFilter redirectLimit =
+                rateLimit(redirectRateLimiter, gatewayClientKeyResolver, problemWriter);
+
         return builder.routes()
                 .route("iam-registration", route -> route
                         .path("/api/v1/users")
                         .and()
                         .method(HttpMethod.POST)
-                        .filters(filters -> filters.requestRateLimiter(config -> {
-                            config.setKeyResolver(gatewayClientKeyResolver);
-                            config.setRateLimiter(authenticationRateLimiter);
-                            config.setDenyEmptyKey(true);
-                        }))
+                        .filters(filters -> filters.filter(authenticationLimit))
                         .uri("lb://linkforge-iam-service"))
                 .route("iam-authentication", route -> route
                         .path(
@@ -69,11 +74,7 @@ public class GatewayRouteConfiguration {
                                 "/login",
                                 "/login/**"
                         )
-                        .filters(filters -> filters.requestRateLimiter(config -> {
-                            config.setKeyResolver(gatewayClientKeyResolver);
-                            config.setRateLimiter(authenticationRateLimiter);
-                            config.setDenyEmptyKey(true);
-                        }))
+                        .filters(filters -> filters.filter(authenticationLimit))
                         .uri("lb://linkforge-iam-service"))
                 .route("iam-api", route -> route
                         .path(
@@ -81,32 +82,30 @@ public class GatewayRouteConfiguration {
                                 "/api/v1/users/**",
                                 "/api/v1/domains/**"
                         )
-                        .filters(filters -> filters.requestRateLimiter(config -> {
-                            config.setKeyResolver(gatewayClientKeyResolver);
-                            config.setRateLimiter(apiRateLimiter);
-                            config.setDenyEmptyKey(true);
-                        }))
+                        .filters(filters -> filters.filter(apiLimit))
                         .uri("lb://linkforge-iam-service"))
                 .route("link-api", route -> route
                         .path("/api/v1/links/**", "/api/v1/groups", "/api/v1/groups/**")
-                        .filters(filters -> filters.requestRateLimiter(config -> {
-                            config.setKeyResolver(gatewayClientKeyResolver);
-                            config.setRateLimiter(apiRateLimiter);
-                            config.setDenyEmptyKey(true);
-                        }))
+                        .filters(filters -> filters.filter(apiLimit))
                         .uri("lb://linkforge-link-service"))
                 .route("link-redirect", route -> route
                         .path("/r/**")
-                        .filters(filters -> filters.requestRateLimiter(config -> {
-                            config.setKeyResolver(gatewayClientKeyResolver);
-                            config.setRateLimiter(redirectRateLimiter);
-                            config.setDenyEmptyKey(true);
-                        }).preserveHostHeader())
+                        .filters(filters -> filters
+                                .filter(redirectLimit)
+                                .preserveHostHeader())
                         .uri("lb://linkforge-link-service"))
                 .build();
     }
 
     private static RedisRateLimiter rateLimiter(GatewayRateLimitProperties.Limit limit) {
         return new RedisRateLimiter(limit.replenishRate(), limit.burstCapacity());
+    }
+
+    private static GatewayFilter rateLimit(
+            RateLimiter<?> rateLimiter,
+            KeyResolver keyResolver,
+            GatewayProblemWriter problemWriter
+    ) {
+        return new GatewayRateLimitFilter(rateLimiter, keyResolver, problemWriter);
     }
 }

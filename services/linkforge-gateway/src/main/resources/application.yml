@@ -12,6 +12,11 @@ spring:
       - optional:nacos:${spring.application.name}-${LINKFORGE_ENV:local}.yaml?group=${NACOS_CONFIG_GROUP:LINKFORGE}&refreshEnabled=true
 
   cloud:
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:10s}
     nacos:
       username: ${NACOS_USERNAME:nacos}
       password: ${NACOS_PASSWORD:nacos}

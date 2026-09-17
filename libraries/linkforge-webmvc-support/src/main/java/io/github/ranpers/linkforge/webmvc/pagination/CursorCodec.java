@@ -1,7 +1,6 @@
 package io.github.ranpers.linkforge.webmvc.pagination;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import io.github.ranpers.linkforge.webmvc.validation.InvalidCursorException;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -44,8 +43,8 @@ public final class CursorCodec {
                 .encodeToString(value.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static ResponseStatusException invalidCursor() {
-        return new ResponseStatusException(HttpStatus.BAD_REQUEST, "cursor 非法");
+    private static InvalidCursorException invalidCursor() {
+        return new InvalidCursorException("cursor 非法");
     }
 
     public record CursorPosition(Instant createdAt, UUID id) {

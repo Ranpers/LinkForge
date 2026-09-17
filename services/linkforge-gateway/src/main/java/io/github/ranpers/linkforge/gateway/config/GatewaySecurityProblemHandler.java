@@ -1,19 +1,13 @@
 package io.github.ranpers.linkforge.gateway.config;
 
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import tools.jackson.databind.ObjectMapper;
-
-import java.net.URI;
 
 /**
  * 将网关安全过滤器产生的 401 和 403 转换为统一问题响应。
@@ -22,10 +16,10 @@ import java.net.URI;
 public final class GatewaySecurityProblemHandler
         implements ServerAuthenticationEntryPoint, ServerAccessDeniedHandler {
 
-    private final ObjectMapper objectMapper;
+    private final GatewayProblemWriter problemWriter;
 
-    public GatewaySecurityProblemHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public GatewaySecurityProblemHandler(GatewayProblemWriter problemWriter) {
+        this.problemWriter = problemWriter;
     }
 
     @Override
@@ -34,7 +28,7 @@ public final class GatewaySecurityProblemHandler
             AuthenticationException exception
     ) {
         exchange.getResponse().getHeaders().set(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-        return write(
+        return problemWriter.write(
                 exchange,
                 HttpStatus.UNAUTHORIZED,
                 "AUTHENTICATION_REQUIRED",
@@ -43,29 +37,15 @@ public final class GatewaySecurityProblemHandler
     }
 
     @Override
-    public Mono<Void> handle(ServerWebExchange exchange, org.springframework.security.access.AccessDeniedException exception) {
-        return write(exchange, HttpStatus.FORBIDDEN, "ACCESS_DENIED", "当前主体无权执行该操作");
-    }
-
-    private Mono<Void> write(
+    public Mono<Void> handle(
             ServerWebExchange exchange,
-            HttpStatus status,
-            String code,
-            String detail
+            org.springframework.security.access.AccessDeniedException exception
     ) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(status.getReasonPhrase());
-        problem.setType(URI.create("https://linkforge.dev/problems/"
-                + code.toLowerCase(java.util.Locale.ROOT).replace('_', '-')));
-        problem.setProperty("code", code);
-        String requestId = GatewayRequestIdWebFilter.requestId(exchange);
-        if (requestId != null) {
-            problem.setProperty("requestId", requestId);
-        }
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_PROBLEM_JSON);
-        DataBuffer buffer = exchange.getResponse().bufferFactory()
-                .wrap(objectMapper.writeValueAsBytes(problem));
-        return exchange.getResponse().writeWith(Mono.just(buffer));
+        return problemWriter.write(
+                exchange,
+                HttpStatus.FORBIDDEN,
+                "ACCESS_DENIED",
+                "当前主体无权执行该操作"
+        );
     }
 }
