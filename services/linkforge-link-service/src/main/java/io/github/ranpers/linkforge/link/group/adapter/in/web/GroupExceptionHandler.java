@@ -3,7 +3,7 @@ package io.github.ranpers.linkforge.link.group.adapter.in.web;
 import io.github.ranpers.linkforge.link.group.application.GroupAlreadyExistsException;
 import io.github.ranpers.linkforge.link.group.application.GroupNotFoundException;
 import io.github.ranpers.linkforge.link.group.domain.InvalidGroupNameException;
-import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

@@ -10,8 +10,8 @@ import io.github.ranpers.linkforge.link.group.application.port.in.ListGroupsQuer
 import io.github.ranpers.linkforge.link.group.application.port.in.ListGroupsUseCase;
 import io.github.ranpers.linkforge.link.group.application.port.in.UpdateGroupCommand;
 import io.github.ranpers.linkforge.link.group.application.port.in.UpdateGroupUseCase;
-import io.github.ranpers.linkforge.link.infrastructure.web.CursorCodec;
-import io.github.ranpers.linkforge.link.infrastructure.web.CursorPageResponse;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorCodec;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorPageResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

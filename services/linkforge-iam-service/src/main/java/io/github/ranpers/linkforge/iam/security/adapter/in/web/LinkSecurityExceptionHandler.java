@@ -5,7 +5,7 @@ import io.github.ranpers.linkforge.iam.security.application.SecurityDispositionD
 import io.github.ranpers.linkforge.iam.security.application.SecurityTargetUserNotFoundException;
 import io.github.ranpers.linkforge.iam.security.application.UserSecurityStatusConflictException;
 import io.github.ranpers.linkforge.iam.security.domain.InvalidLinkSecurityRestrictionException;
-import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

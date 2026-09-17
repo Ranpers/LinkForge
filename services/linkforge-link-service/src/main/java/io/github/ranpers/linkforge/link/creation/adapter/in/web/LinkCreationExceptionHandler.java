@@ -7,7 +7,7 @@ import io.github.ranpers.linkforge.link.creation.application.LinkCreationDeniedE
 import io.github.ranpers.linkforge.link.creation.application.ShortCodeAllocationException;
 import io.github.ranpers.linkforge.link.creation.application.ShortCodeAlreadyExistsException;
 import io.github.ranpers.linkforge.link.creation.domain.InvalidShortLinkException;
-import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

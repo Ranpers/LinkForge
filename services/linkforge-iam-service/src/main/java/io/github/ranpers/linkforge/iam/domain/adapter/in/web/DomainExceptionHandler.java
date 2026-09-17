@@ -5,7 +5,7 @@ import io.github.ranpers.linkforge.iam.domain.application.DomainHostAlreadyExist
 import io.github.ranpers.linkforge.iam.domain.application.DomainNotFoundException;
 import io.github.ranpers.linkforge.iam.domain.application.DomainWriteDeniedException;
 import io.github.ranpers.linkforge.iam.domain.domain.InvalidDomainHostException;
-import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

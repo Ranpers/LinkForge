@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.iam.control.adapter.in.web;
 
 import io.github.ranpers.linkforge.iam.control.domain.InvalidControlEventTraceIdException;
-import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

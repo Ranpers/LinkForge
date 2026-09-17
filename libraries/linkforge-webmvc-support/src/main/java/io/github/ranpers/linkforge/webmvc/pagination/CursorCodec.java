@@ -1,4 +1,4 @@
-package io.github.ranpers.linkforge.iam.infrastructure.web;
+package io.github.ranpers.linkforge.webmvc.pagination;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;

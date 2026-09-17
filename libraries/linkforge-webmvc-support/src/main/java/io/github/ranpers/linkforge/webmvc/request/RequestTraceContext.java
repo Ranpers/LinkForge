@@ -1,4 +1,4 @@
-package io.github.ranpers.linkforge.iam.infrastructure.web;
+package io.github.ranpers.linkforge.webmvc.request;
 
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;

@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.link.config;
 
-import io.github.ranpers.linkforge.link.infrastructure.web.ApiSecurityProblemHandler;
+import io.github.ranpers.linkforge.webmvc.problem.ApiSecurityProblemHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

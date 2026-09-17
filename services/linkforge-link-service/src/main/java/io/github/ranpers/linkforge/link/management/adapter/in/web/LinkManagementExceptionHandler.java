@@ -5,7 +5,7 @@ import io.github.ranpers.linkforge.link.management.application.LinkManagementDen
 import io.github.ranpers.linkforge.link.management.application.LinkStateConflictException;
 import io.github.ranpers.linkforge.link.management.application.ShortLinkNotFoundException;
 import io.github.ranpers.linkforge.link.management.domain.InvalidManagedTargetUrlException;
-import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;

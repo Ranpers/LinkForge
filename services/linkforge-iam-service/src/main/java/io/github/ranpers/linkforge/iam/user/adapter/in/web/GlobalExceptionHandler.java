@@ -2,7 +2,7 @@ package io.github.ranpers.linkforge.iam.user.adapter.in.web;
 
 import io.github.ranpers.linkforge.iam.user.domain.InvalidUserDataException;
 import io.github.ranpers.linkforge.iam.user.domain.UsernameAlreadyExistsException;
-import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

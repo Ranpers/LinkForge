@@ -1,5 +1,6 @@
-package io.github.ranpers.linkforge.link.infrastructure.web;
+package io.github.ranpers.linkforge.webmvc.problem;
 
+import io.github.ranpers.linkforge.webmvc.request.RequestTraceContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -9,15 +10,16 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
 /**
  * 将资源服务器过滤器链产生的 401 和 403 转换为统一问题响应。
+ *
+ * @implNote 由 {@code LinkForgeWebMvcSupportConfiguration} 显式注册；本类刻意不声明
+ * {@code @Component}，避免组件扫描范围决定其是否生效。
  */
-@Component
 public final class ApiSecurityProblemHandler
         implements AuthenticationEntryPoint, AccessDeniedHandler {
 

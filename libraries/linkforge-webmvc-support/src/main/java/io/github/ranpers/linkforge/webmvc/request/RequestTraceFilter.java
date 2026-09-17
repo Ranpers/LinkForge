@@ -1,4 +1,4 @@
-package io.github.ranpers.linkforge.link.infrastructure.web;
+package io.github.ranpers.linkforge.webmvc.request;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -18,8 +17,10 @@ import java.util.UUID;
 
 /**
  * 保留可信上游关联标识；缺失时生成新标识，并将其写入请求和响应。
+ *
+ * @implNote 由 {@code LinkForgeWebMvcSupportConfiguration} 显式注册；本类刻意不声明
+ * {@code @Component}，避免组件扫描范围决定其是否生效。
  */
-@Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public final class RequestTraceFilter extends OncePerRequestFilter {
 

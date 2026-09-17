@@ -1,5 +1,6 @@
-package io.github.ranpers.linkforge.link.infrastructure.web;
+package io.github.ranpers.linkforge.webmvc.problem;
 
+import io.github.ranpers.linkforge.webmvc.request.RequestTraceContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 

@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.link.infrastructure.web;
 
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

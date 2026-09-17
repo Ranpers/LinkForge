@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.link.resolution.adapter.in.web;
 
 import io.github.ranpers.linkforge.link.resolution.application.ShortLinkUnavailableException;
-import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import org.springframework.dao.DataAccessException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

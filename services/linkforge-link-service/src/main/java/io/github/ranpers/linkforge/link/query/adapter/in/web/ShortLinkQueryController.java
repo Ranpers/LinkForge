@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.link.query.adapter.in.web;
 
-import io.github.ranpers.linkforge.link.infrastructure.web.CursorCodec;
-import io.github.ranpers.linkforge.link.infrastructure.web.CursorPageResponse;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorCodec;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorPageResponse;
 import io.github.ranpers.linkforge.link.query.application.port.in.ListShortLinksQuery;
 import io.github.ranpers.linkforge.link.query.application.port.in.ListShortLinksUseCase;
 import io.github.ranpers.linkforge.link.query.application.port.in.ShortLinkListItem;

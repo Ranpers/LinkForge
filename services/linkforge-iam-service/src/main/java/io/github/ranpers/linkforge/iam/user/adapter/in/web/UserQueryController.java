@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.iam.user.adapter.in.web;
 
-import io.github.ranpers.linkforge.iam.infrastructure.web.CursorCodec;
-import io.github.ranpers.linkforge.iam.infrastructure.web.CursorPageResponse;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorCodec;
+import io.github.ranpers.linkforge.webmvc.pagination.CursorPageResponse;
 import io.github.ranpers.linkforge.iam.user.application.port.in.ListUsersQuery;
 import io.github.ranpers.linkforge.iam.user.application.port.in.ListUsersUseCase;
 import io.github.ranpers.linkforge.iam.user.application.port.in.UserListItem;
