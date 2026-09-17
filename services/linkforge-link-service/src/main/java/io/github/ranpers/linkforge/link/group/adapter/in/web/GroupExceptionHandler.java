@@ -3,28 +3,32 @@ package io.github.ranpers.linkforge.link.group.adapter.in.web;
 import io.github.ranpers.linkforge.link.group.application.GroupAlreadyExistsException;
 import io.github.ranpers.linkforge.link.group.application.GroupNotFoundException;
 import io.github.ranpers.linkforge.link.group.domain.InvalidGroupNameException;
+import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackageClasses = GroupController.class)
 public class GroupExceptionHandler {
 
     @ExceptionHandler(InvalidGroupNameException.class)
     ProblemDetail invalidName(InvalidGroupNameException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_GROUP_NAME", exception.getMessage());
     }
 
     @ExceptionHandler(GroupNotFoundException.class)
     ProblemDetail notFound(GroupNotFoundException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ApiProblems.create(HttpStatus.NOT_FOUND, "GROUP_NOT_FOUND", exception.getMessage());
     }
 
     @ExceptionHandler(GroupAlreadyExistsException.class)
     ProblemDetail conflict(GroupAlreadyExistsException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        return ApiProblems.create(HttpStatus.CONFLICT, "GROUP_ALREADY_EXISTS", exception.getMessage());
     }
 
     /**
@@ -34,6 +38,6 @@ public class GroupExceptionHandler {
      */
     @ExceptionHandler(DuplicateKeyException.class)
     ProblemDetail duplicateKey(DuplicateKeyException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "同名分组已存在");
+        return ApiProblems.create(HttpStatus.CONFLICT, "GROUP_ALREADY_EXISTS", "同名分组已存在");
     }
 }

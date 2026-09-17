@@ -2,6 +2,7 @@ package io.github.ranpers.linkforge.iam.config;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import io.github.ranpers.linkforge.iam.infrastructure.web.ApiSecurityProblemHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +53,10 @@ public class ResourceServerConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain apiChain(HttpSecurity httpSecurity) {
+    SecurityFilterChain apiChain(
+            HttpSecurity httpSecurity,
+            ApiSecurityProblemHandler securityProblemHandler
+    ) {
         httpSecurity
                 .securityMatcher("/api/**", "/internal/**")
                 .csrf(AbstractHttpConfigurer::disable)
@@ -67,8 +71,13 @@ public class ResourceServerConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/domains")
                         .hasAnyAuthority("link:create", "domain:read")
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler)
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return httpSecurity.build();
     }

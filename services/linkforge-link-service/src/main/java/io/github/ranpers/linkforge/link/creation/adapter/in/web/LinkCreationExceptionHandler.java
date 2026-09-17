@@ -7,63 +7,67 @@ import io.github.ranpers.linkforge.link.creation.application.LinkCreationDeniedE
 import io.github.ranpers.linkforge.link.creation.application.ShortCodeAllocationException;
 import io.github.ranpers.linkforge.link.creation.application.ShortCodeAlreadyExistsException;
 import io.github.ranpers.linkforge.link.creation.domain.InvalidShortLinkException;
+import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackageClasses = ShortLinkCreationController.class)
 public class LinkCreationExceptionHandler {
 
     @ExceptionHandler(InvalidShortLinkException.class)
     ProblemDetail invalidLink(InvalidShortLinkException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_SHORT_LINK", exception.getMessage());
     }
 
     @ExceptionHandler(InvalidLinkGroupException.class)
     ProblemDetail invalidGroup(InvalidLinkGroupException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_LINK_GROUP", exception.getMessage());
     }
 
     @ExceptionHandler(LinkCreationDeniedException.class)
     ProblemDetail denied(LinkCreationDeniedException exception) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
-                HttpStatus.FORBIDDEN, exception.getMessage()
+        return ApiProblems.authorization(
+                HttpStatus.FORBIDDEN,
+                "LINK_CREATION_DENIED",
+                exception.getMessage(),
+                exception.reasonCode(),
+                exception.decisionId()
         );
-        detail.setProperty("reasonCode", exception.reasonCode());
-        detail.setProperty("decisionId", exception.decisionId());
-        return detail;
     }
 
     @ExceptionHandler(IdempotencyConflictException.class)
     ProblemDetail idempotencyConflict(IdempotencyConflictException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        return ApiProblems.create(HttpStatus.CONFLICT, "IDEMPOTENCY_CONFLICT", exception.getMessage());
     }
 
     @ExceptionHandler(ShortCodeAlreadyExistsException.class)
     ProblemDetail shortCodeAlreadyExists(ShortCodeAlreadyExistsException exception) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+        return ApiProblems.create(
                 HttpStatus.CONFLICT,
+                "SHORT_CODE_ALREADY_EXISTS",
                 exception.getMessage()
         );
-        detail.setProperty("code", "SHORT_CODE_ALREADY_EXISTS");
-        return detail;
     }
 
     @ExceptionHandler(ShortCodeAllocationException.class)
     ProblemDetail shortCodeAllocationFailed(ShortCodeAllocationException exception) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+        return ApiProblems.create(
                 HttpStatus.SERVICE_UNAVAILABLE,
+                "SHORT_CODE_ALLOCATION_FAILED",
                 exception.getMessage()
         );
-        detail.setProperty("code", "SHORT_CODE_ALLOCATION_FAILED");
-        return detail;
     }
 
     @ExceptionHandler(IamAuthorizationUnavailableException.class)
     ProblemDetail iamUnavailable() {
-        return ProblemDetail.forStatusAndDetail(
+        return ApiProblems.create(
                 HttpStatus.SERVICE_UNAVAILABLE,
+                "IAM_UNAVAILABLE",
                 "IAM 当前不可用，已拒绝创建短链"
         );
     }

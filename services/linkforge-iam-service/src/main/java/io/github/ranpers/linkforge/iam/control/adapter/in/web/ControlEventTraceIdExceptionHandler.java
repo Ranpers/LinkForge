@@ -1,6 +1,7 @@
 package io.github.ranpers.linkforge.iam.control.adapter.in.web;
 
 import io.github.ranpers.linkforge.iam.control.domain.InvalidControlEventTraceIdException;
+import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,6 @@ public class ControlEventTraceIdExceptionHandler {
 
     @ExceptionHandler(InvalidControlEventTraceIdException.class)
     ProblemDetail invalid(InvalidControlEventTraceIdException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_TRACE_ID", exception.getMessage());
     }
 }

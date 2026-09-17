@@ -5,44 +5,49 @@ import io.github.ranpers.linkforge.link.management.application.LinkManagementDen
 import io.github.ranpers.linkforge.link.management.application.LinkStateConflictException;
 import io.github.ranpers.linkforge.link.management.application.ShortLinkNotFoundException;
 import io.github.ranpers.linkforge.link.management.domain.InvalidManagedTargetUrlException;
+import io.github.ranpers.linkforge.link.infrastructure.web.ApiProblems;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackageClasses = ShortLinkManagementController.class)
 public class LinkManagementExceptionHandler {
 
     @ExceptionHandler(InvalidManagedTargetUrlException.class)
     ProblemDetail invalid(InvalidManagedTargetUrlException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_TARGET_URL", exception.getMessage());
     }
 
     @ExceptionHandler(ShortLinkNotFoundException.class)
     ProblemDetail notFound(ShortLinkNotFoundException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ApiProblems.create(HttpStatus.NOT_FOUND, "SHORT_LINK_NOT_FOUND", exception.getMessage());
     }
 
     @ExceptionHandler(LinkManagementDeniedException.class)
     ProblemDetail denied(LinkManagementDeniedException exception) {
-        ProblemDetail detail = ProblemDetail.forStatusAndDetail(
+        return ApiProblems.authorization(
                 HttpStatus.FORBIDDEN,
-                exception.getMessage()
+                "LINK_MANAGEMENT_DENIED",
+                exception.getMessage(),
+                exception.reasonCode(),
+                exception.decisionId()
         );
-        detail.setProperty("reasonCode", exception.reasonCode());
-        detail.setProperty("decisionId", exception.decisionId());
-        return detail;
     }
 
     @ExceptionHandler(LinkStateConflictException.class)
     ProblemDetail stateConflict(LinkStateConflictException exception) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+        return ApiProblems.create(HttpStatus.CONFLICT, "LINK_STATE_CONFLICT", exception.getMessage());
     }
 
     @ExceptionHandler(LinkManagementAuthorizationUnavailableException.class)
     ProblemDetail iamUnavailable(LinkManagementAuthorizationUnavailableException exception) {
-        return ProblemDetail.forStatusAndDetail(
+        return ApiProblems.create(
                 HttpStatus.SERVICE_UNAVAILABLE,
+                "IAM_UNAVAILABLE",
                 "IAM 当前不可用，已拒绝管理短链"
         );
     }

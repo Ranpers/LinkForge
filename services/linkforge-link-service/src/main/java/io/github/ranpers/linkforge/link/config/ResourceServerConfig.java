@@ -1,5 +1,6 @@
 package io.github.ranpers.linkforge.link.config;
 
+import io.github.ranpers.linkforge.link.infrastructure.web.ApiSecurityProblemHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,7 +21,10 @@ import java.util.LinkedHashSet;
 public class ResourceServerConfig {
 
     @Bean
-    SecurityFilterChain linkApiSecurity(HttpSecurity http) {
+    SecurityFilterChain linkApiSecurity(
+            HttpSecurity http,
+            ApiSecurityProblemHandler securityProblemHandler
+    ) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
@@ -47,9 +51,13 @@ public class ResourceServerConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/v1/groups/**")
                         .hasAuthority("group:delete")
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(resourceServer ->
-                        resourceServer.jwt(jwt ->
-                                jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler))
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler)
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();
     }
 

@@ -1,8 +1,5 @@
-package io.github.ranpers.linkforge.iam.user.adapter.in.web;
+package io.github.ranpers.linkforge.link.infrastructure.web;
 
-import io.github.ranpers.linkforge.iam.user.domain.InvalidUserDataException;
-import io.github.ranpers.linkforge.iam.user.domain.UsernameAlreadyExistsException;
-import io.github.ranpers.linkforge.iam.infrastructure.web.ApiProblems;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,59 +21,34 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.stream.Collectors;
 
 /**
- * 将未由功能级异常处理器处理的 IAM HTTP 异常转换为稳定的问题响应。
- *
- * @implNote 最低优先级确保领域功能自己的异常映射先于全局兜底执行。
+ * 将未由功能级处理器处理的 HTTP 异常转换为统一问题响应。
  */
 @Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class LinkGlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
-    @ExceptionHandler(UsernameAlreadyExistsException.class)
-    ProblemDetail handleUsernameExists(UsernameAlreadyExistsException exception) {
-        return ApiProblems.create(
-                HttpStatus.CONFLICT,
-                "USERNAME_ALREADY_EXISTS",
-                exception.getMessage()
-        );
-    }
-
-    @ExceptionHandler(InvalidUserDataException.class)
-    ProblemDetail handleInvalidUserData(InvalidUserDataException exception) {
-        return invalidRequest(exception.getMessage());
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    ProblemDetail handleAccessDenied() {
-        return ApiProblems.create(
-                HttpStatus.FORBIDDEN,
-                "ACCESS_DENIED",
-                "当前主体无权执行该操作"
-        );
-    }
+    private static final Logger log = LoggerFactory.getLogger(LinkGlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    ProblemDetail handleValidation(MethodArgumentNotValidException exception) {
+    ProblemDetail validation(MethodArgumentNotValidException exception) {
         String detail = exception.getBindingResult().getFieldErrors().stream()
-                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         return invalidRequest(detail);
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    ProblemDetail handleMethodValidation() {
+    ProblemDetail methodValidation() {
         return invalidRequest("请求参数校验失败");
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    ProblemDetail handleConstraintViolation(ConstraintViolationException exception) {
+    ProblemDetail constraintViolation(ConstraintViolationException exception) {
         return invalidRequest(exception.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+    ProblemDetail typeMismatch(MethodArgumentTypeMismatchException exception) {
         return invalidRequest(exception.getName() + ": 参数格式错误");
     }
 
@@ -84,22 +56,27 @@ public class GlobalExceptionHandler {
             MissingRequestHeaderException.class,
             MissingServletRequestParameterException.class
     })
-    ProblemDetail handleMissingRequestValue(Exception exception) {
+    ProblemDetail missingValue(Exception exception) {
         return invalidRequest(exception.getMessage());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    ProblemDetail handleNotReadable() {
+    ProblemDetail notReadable() {
         return invalidRequest("请求体缺失或格式错误");
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    ProblemDetail handleIllegalArgument(IllegalArgumentException exception) {
+    ProblemDetail illegalArgument(IllegalArgumentException exception) {
         return invalidRequest(exception.getMessage());
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    ProblemDetail accessDenied() {
+        return ApiProblems.create(HttpStatus.FORBIDDEN, "ACCESS_DENIED", "当前主体无权执行该操作");
+    }
+
     @ExceptionHandler(ErrorResponseException.class)
-    ProblemDetail handleFrameworkError(ErrorResponseException exception) {
+    ProblemDetail frameworkError(ErrorResponseException exception) {
         HttpStatus status = HttpStatus.resolve(exception.getStatusCode().value());
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -113,7 +90,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    ProblemDetail handleUnexpected(Exception exception) {
+    ProblemDetail unexpected(Exception exception) {
         log.error("未处理异常", exception);
         return ApiProblems.create(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -123,10 +100,6 @@ public class GlobalExceptionHandler {
     }
 
     private static ProblemDetail invalidRequest(String detail) {
-        return ApiProblems.create(
-                HttpStatus.BAD_REQUEST,
-                "INVALID_REQUEST",
-                detail
-        );
+        return ApiProblems.create(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", detail);
     }
 }

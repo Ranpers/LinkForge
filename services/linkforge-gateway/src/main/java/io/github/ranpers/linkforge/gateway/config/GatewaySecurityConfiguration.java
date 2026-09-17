@@ -16,7 +16,8 @@ public class GatewaySecurityConfiguration {
     @Bean
     SecurityWebFilterChain gatewaySecurityWebFilterChain(
             ServerHttpSecurity http,
-            CorsConfigurationSource gatewayCorsConfigurationSource
+            CorsConfigurationSource gatewayCorsConfigurationSource,
+            GatewaySecurityProblemHandler securityProblemHandler
     ) {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -33,7 +34,13 @@ public class GatewaySecurityConfiguration {
                         .pathMatchers("/oauth2/**", "/.well-known/**", "/login", "/login/**").permitAll()
                         .anyExchange().authenticated()
                 )
-                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler))
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler)
+                        .jwt(Customizer.withDefaults()))
                 .build();
     }
 }
