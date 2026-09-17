@@ -31,7 +31,7 @@ public class MybatisSigningKeyStore implements SigningKeyStore {
 
     @Override
     public Optional<SigningKey> findActive() {
-        return Optional.ofNullable(signingKeyMapper.findActive()).map(this::toDomainAndMigrate);
+        return Optional.ofNullable(signingKeyMapper.findActive()).map(this::toDomain);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class MybatisSigningKeyStore implements SigningKeyStore {
         }
     }
 
-    private SigningKey toDomainAndMigrate(SigningKeyDO dataObject) {
+    private SigningKey toDomain(SigningKeyDO dataObject) {
         final SigningAlgorithm algorithm;
         try {
             algorithm = SigningAlgorithm.valueOf(dataObject.algorithm());
@@ -52,15 +52,6 @@ public class MybatisSigningKeyStore implements SigningKeyStore {
         String privateKeyDer = signingKeyProtector.unprotect(
                 dataObject.keyId(), dataObject.protectedPrivateKey()
         );
-        if (!signingKeyProtector.isProtected(dataObject.protectedPrivateKey())) {
-            String protectedValue = signingKeyProtector.protect(dataObject.keyId(), privateKeyDer);
-            int migrated = signingKeyMapper.migratePrivateKey(
-                    dataObject.keyId(), dataObject.protectedPrivateKey(), protectedValue
-            );
-            if (migrated != 1) {
-                throw new IllegalStateException("历史签名私钥加密迁移失败");
-            }
-        }
         return new SigningKey(
                 dataObject.keyId(),
                 algorithm,

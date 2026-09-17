@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.iam.authorization.application.port.out;
 
 /**
- * 保护持久化的签名私钥材料，并支持识别和读取历史明文记录。
+ * 保护持久化的签名私钥材料。
  */
 public interface SigningKeyProtector {
 
@@ -15,20 +15,12 @@ public interface SigningKeyProtector {
     String protect(String keyId, String privateKeyDer);
 
     /**
-     * 解密受保护私钥；未带密文格式标记的值按历史明文返回。
+     * 解密受保护私钥。
      *
      * @param keyId               与私钥绑定的非空密钥标识
      * @param protectedPrivateKey 数据库存储的非空私钥材料
      * @return Base64 编码的 PKCS#8 私钥
-     * @throws IllegalStateException 密文版本未知、认证失败或无法解密时
+     * @throws IllegalStateException 值不是受支持的密文、认证失败或无法解密时
      */
     String unprotect(String keyId, String protectedPrivateKey);
-
-    /**
-     * 判断值是否使用当前支持的受保护格式。
-     *
-     * @param value 数据库存储的非空私钥材料
-     * @return 带受支持格式标记时返回 {@code true}
-     */
-    boolean isProtected(String value);
 }

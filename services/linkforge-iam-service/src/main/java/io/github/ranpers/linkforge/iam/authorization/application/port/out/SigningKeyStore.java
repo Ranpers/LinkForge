@@ -17,7 +17,7 @@ public interface SigningKeyStore {
     void lockForInitialization();
 
     /**
-     * 读取当前活动密钥，并在需要时把历史明文私钥迁移为加密存储。
+     * 读取当前活动密钥，并解密持久化的私钥材料。
      *
      * @return 当前活动密钥；尚未初始化时为空
      */

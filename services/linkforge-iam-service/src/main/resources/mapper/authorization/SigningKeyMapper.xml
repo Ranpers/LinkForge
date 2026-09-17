@@ -14,7 +14,7 @@
         SELECT key_id AS "keyId",
                algorithm,
                public_key_der AS "publicKeyDer",
-               private_key_der AS "protectedPrivateKey"
+               protected_private_key AS "protectedPrivateKey"
         FROM t_authorization_jwk
         WHERE status = 1
         ORDER BY created_at DESC
@@ -26,7 +26,7 @@
             key_id,
             algorithm,
             public_key_der,
-            private_key_der,
+            protected_private_key,
             status
         ) VALUES (
             #{keyId},
@@ -36,12 +36,5 @@
             1
         )
     </insert>
-
-    <update id="migratePrivateKey">
-        UPDATE t_authorization_jwk
-        SET private_key_der = #{protectedValue}
-        WHERE key_id = #{keyId}
-          AND private_key_der = #{expectedValue}
-    </update>
 
 </mapper>

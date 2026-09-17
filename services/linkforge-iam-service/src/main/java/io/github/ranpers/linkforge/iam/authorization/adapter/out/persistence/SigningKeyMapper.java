@@ -12,9 +12,4 @@ public interface SigningKeyMapper {
 
     int insert(SigningKeyDO signingKey);
 
-    int migratePrivateKey(
-            @Param("keyId") String keyId,
-            @Param("expectedValue") String expectedValue,
-            @Param("protectedValue") String protectedValue
-    );
 }

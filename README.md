@@ -53,7 +53,7 @@ openssl rand -base64 64
 openssl rand -base64 32
 ```
 
-第二条命令的输出填写到 `IAM_SIGNING_KEY_ENCRYPTION_KEY`。已有 IAM 数据库必须始终使用同一加密密钥，否则历史签名私钥无法解密。`.env` 已加入忽略规则，禁止提交真实密钥。示例中的 `{noop}` 密钥仅供本地开发，生产环境必须改用安全哈希或密钥管理服务。
+第二条命令的输出填写到 `IAM_SIGNING_KEY_ENCRYPTION_KEY`。已有 IAM 数据库必须始终使用同一加密密钥，否则已存储的签名私钥密文无法解密。`.env` 已加入忽略规则，禁止提交真实密钥。示例中的 `{noop}` 密钥仅供本地开发，生产环境必须改用安全哈希或密钥管理服务。
 
 首次启动时，Compose 会以 `NACOS_PASSWORD` 幂等初始化 Nacos 管理员；若持久卷已存在，则该密码必须与卷内管理员密码一致。PostgreSQL 也只在空数据卷首次创建用户，已有卷的密码不会因修改 `.env` 自动变化。
 

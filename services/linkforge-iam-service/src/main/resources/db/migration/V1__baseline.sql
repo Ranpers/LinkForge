@@ -157,7 +157,7 @@ CREATE TABLE t_authorization_jwk
     key_id          varchar(64) PRIMARY KEY,
     algorithm       varchar(16) NOT NULL,
     public_key_der  text        NOT NULL,
-    private_key_der text        NOT NULL,
+    protected_private_key text  NOT NULL,
     status          smallint    NOT NULL DEFAULT 1,
     created_at      timestamptz NOT NULL DEFAULT now(),
     retired_at      timestamptz,

@@ -58,11 +58,8 @@ public final class AesGcmSigningKeyProtector implements SigningKeyProtector {
 
     @Override
     public String unprotect(String keyId, String protectedPrivateKey) {
-        if (protectedPrivateKey.startsWith("enc:") && !isProtected(protectedPrivateKey)) {
-            throw new IllegalStateException("不支持的签名私钥密文版本");
-        }
-        if (!isProtected(protectedPrivateKey)) {
-            return protectedPrivateKey;
+        if (protectedPrivateKey == null || !protectedPrivateKey.startsWith(FORMAT_PREFIX)) {
+            throw new IllegalStateException("签名私钥不是受支持的 enc:v1 密文");
         }
         try {
             byte[] payload = Base64.getDecoder().decode(
@@ -85,11 +82,6 @@ public final class AesGcmSigningKeyProtector implements SigningKeyProtector {
         } catch (GeneralSecurityException | IllegalArgumentException exception) {
             throw new IllegalStateException("签名私钥解密失败", exception);
         }
-    }
-
-    @Override
-    public boolean isProtected(String value) {
-        return value != null && value.startsWith(FORMAT_PREFIX);
     }
 
     private static byte[] decodeKey(String encodedKey) {
