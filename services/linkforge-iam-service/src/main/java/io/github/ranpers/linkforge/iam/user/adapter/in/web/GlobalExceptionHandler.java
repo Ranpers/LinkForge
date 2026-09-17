@@ -4,7 +4,6 @@ import io.github.ranpers.linkforge.iam.user.domain.InvalidUserDataException;
 import io.github.ranpers.linkforge.iam.user.domain.UsernameAlreadyExistsException;
 import io.github.ranpers.linkforge.webmvc.problem.ApiProblems;
 import io.github.ranpers.linkforge.webmvc.validation.InvalidCursorException;
-import io.github.ranpers.linkforge.webmvc.validation.InvalidQueryParameterException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +34,9 @@ import java.util.stream.Collectors;
  * 将未由功能级异常处理器处理的 IAM HTTP 异常转换为稳定的问题响应。
  *
  * @implNote 最低优先级确保领域功能自己的异常映射先于全局兜底执行。这里刻意不为
- * {@link IllegalArgumentException} 提供处理器：领域不变量、配置读取和内部解码失败都用它表达，
- * 统一映射成 400 会把这些服务端缺陷伪装成调用方输入问题。只有专门表示调用方输入的
- * {@link InvalidCursorException} 与 {@link InvalidQueryParameterException} 才按 400 返回。
+ * {@link IllegalArgumentException} 提供处理器：领域不变量、application 输入对象的构造校验、
+ * 配置读取和内部解码失败都用它表达，统一映射成 400 会把这些服务端缺陷伪装成调用方输入问题。
+ * 只有专由 Web 边界抛出的 {@link InvalidCursorException} 才按 400 返回。
  */
 @Order(Ordered.LOWEST_PRECEDENCE)
 @RestControllerAdvice
@@ -115,11 +114,6 @@ public class GlobalExceptionHandler {
                 "INVALID_CURSOR",
                 exception.getMessage()
         );
-    }
-
-    @ExceptionHandler(InvalidQueryParameterException.class)
-    ProblemDetail handleInvalidQueryParameter(InvalidQueryParameterException exception) {
-        return invalidRequest(exception.getMessage());
     }
 
     /**
