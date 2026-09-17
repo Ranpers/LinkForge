@@ -35,6 +35,6 @@ public interface LinkSecurityRestrictionMapper {
     int appendSnapshotEvent(
             @Param("targetUserId") UUID targetUserId,
             @Param("revision") long revision,
-            @Param("traceId") String traceId
+            @Param("requestId") String requestId
     );
 }

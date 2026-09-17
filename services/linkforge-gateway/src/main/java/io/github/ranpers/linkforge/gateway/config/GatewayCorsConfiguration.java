@@ -18,9 +18,9 @@ public class GatewayCorsConfiguration {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(properties.getAllowedOrigins());
         configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
-        // Origin 已精确限制；允许浏览器声明业务所需请求头，避免新增追踪头时破坏预检。
+        // Origin 已精确限制；允许浏览器声明业务所需请求头，避免新增请求头时破坏预检。
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Location", "X-Trace-Id"));
+        configuration.setExposedHeaders(List.of("Location", GatewayRequestIdWebFilter.HEADER_NAME));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 

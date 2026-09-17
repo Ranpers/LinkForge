@@ -27,7 +27,7 @@ public class MybatisLinkControlEventStateStore implements
                 event.eventType().wireName(),
                 event.schemaVersion(),
                 event.streamKey(),
-                event.traceId() == null ? null : event.traceId().value()
+                event.requestId() == null ? null : event.requestId().value()
         ) == 1;
     }
 

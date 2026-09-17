@@ -138,7 +138,7 @@ management:
 
 logging:
   pattern:
-    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-},%X{requestId:-}] "
   include-application-name: false
 
 mybatis-flex:

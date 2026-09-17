@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.adapter.out.persistence;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.domain.application.port.out.DomainStore;
 import org.springframework.stereotype.Repository;
 
@@ -28,13 +28,13 @@ public class MybatisDomainStore implements DomainStore {
             UUID actorUserId,
             String host,
             String name,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
         DomainCreationRow row = mapper.create(
                 actorUserId,
                 host,
                 name,
-                traceId == null ? null : traceId.value()
+                requestId == null ? null : requestId.value()
         );
         Integer code = row == null ? null : row.resultCode();
         return switch (code == null ? DENIED_CODE : code) {

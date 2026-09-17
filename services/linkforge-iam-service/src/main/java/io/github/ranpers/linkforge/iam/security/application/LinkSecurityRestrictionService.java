@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.CreateLinkSecurityRestrictionCommand;
 import io.github.ranpers.linkforge.iam.security.application.port.in.ManageLinkSecurityRestrictionUseCase;
 import io.github.ranpers.linkforge.iam.security.application.port.out.LinkSecurityRestrictionStore;
@@ -37,9 +37,9 @@ public class LinkSecurityRestrictionService implements ManageLinkSecurityRestric
             UUID actorUserId,
             UUID targetUserId,
             UUID restrictionId,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
-        switch (store.revoke(actorUserId, targetUserId, restrictionId, traceId)) {
+        switch (store.revoke(actorUserId, targetUserId, restrictionId, requestId)) {
             case CHANGED, UNCHANGED -> {
             }
             case TARGET_NOT_FOUND -> throw new SecurityTargetUserNotFoundException();

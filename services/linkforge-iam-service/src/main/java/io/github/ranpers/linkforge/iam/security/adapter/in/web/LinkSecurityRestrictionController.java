@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.adapter.in.web;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.CreateLinkSecurityRestrictionCommand;
 import io.github.ranpers.linkforge.iam.security.application.port.in.ManageLinkSecurityRestrictionUseCase;
 import io.github.ranpers.linkforge.iam.security.domain.LinkSecurityRestriction;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventTraceHeaders.TRACE_ID;
+import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventRequestHeaders.REQUEST_ID;
 
 @RestController
 @RequestMapping("/api/v1/users/{userId}/link-security-restrictions")
@@ -36,7 +36,7 @@ public class LinkSecurityRestrictionController {
             JwtAuthenticationToken authentication,
             @PathVariable UUID userId,
             @Valid @RequestBody CreateLinkSecurityRestrictionRequest request,
-            @RequestHeader(value = TRACE_ID, required = false) String traceId
+            @RequestHeader(value = REQUEST_ID, required = false) String requestId
     ) {
         UUID restrictionId = restrictions.create(new CreateLinkSecurityRestrictionCommand(
                 UUID.fromString(authentication.getToken().getSubject()),
@@ -47,7 +47,7 @@ public class LinkSecurityRestrictionController {
                         request.rangeEnd(),
                         request.reasonCode()
                 ),
-                ControlEventTraceId.fromNullable(traceId)
+                ControlEventRequestId.fromNullable(requestId)
         ));
         return new CreateLinkSecurityRestrictionResponse(restrictionId);
     }
@@ -58,13 +58,13 @@ public class LinkSecurityRestrictionController {
             JwtAuthenticationToken authentication,
             @PathVariable UUID userId,
             @PathVariable UUID restrictionId,
-            @RequestHeader(value = TRACE_ID, required = false) String traceId
+            @RequestHeader(value = REQUEST_ID, required = false) String requestId
     ) {
         restrictions.revoke(
                 UUID.fromString(authentication.getToken().getSubject()),
                 userId,
                 restrictionId,
-                ControlEventTraceId.fromNullable(traceId)
+                ControlEventRequestId.fromNullable(requestId)
         );
     }
 }

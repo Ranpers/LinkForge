@@ -10,31 +10,31 @@ import java.util.Objects;
  * @apiNote 空白判定使用 wire schema 固定的 Unicode {@code White_Space} 码点集合，
  * 不依赖 {@link String#isBlank()}，因此不会随 JVM 的 Unicode 数据版本变化
  */
-public record ControlEventTraceId(String value) {
+public record ControlEventRequestId(String value) {
 
     public static final int MAX_LENGTH = 64;
 
-    public ControlEventTraceId {
+    public ControlEventRequestId {
         Objects.requireNonNull(value, "value");
-        if (value.codePoints().allMatch(ControlEventTraceId::isWireWhitespace)) {
-            throw new InvalidControlEventTraceIdException("traceId 不能为空白");
+        if (value.codePoints().allMatch(ControlEventRequestId::isWireWhitespace)) {
+            throw new InvalidControlEventRequestIdException("requestId 不能为空白");
         }
         if (value.codePointCount(0, value.length()) > MAX_LENGTH) {
-            throw new InvalidControlEventTraceIdException("traceId 长度不能超过 64 个 Unicode code point");
+            throw new InvalidControlEventRequestIdException("requestId 长度不能超过 64 个 Unicode code point");
         }
     }
 
     /**
-     * 将可缺失的消息字段转换为受校验的追踪标识。
+     * 将可缺失的消息字段转换为受校验的关联标识。
      *
      * @param value 可为空的原始值；非空时必须满足本类型不变量
-     * @return 输入为空时返回 {@code null}；否则返回保持原值的追踪标识
-     * @throws InvalidControlEventTraceIdException 输入为空白或超过 64 个 Unicode code point 时
+     * @return 输入为空时返回 {@code null}；否则返回保持原值的关联标识
+     * @throws InvalidControlEventRequestIdException 输入为空白或超过 64 个 Unicode code point 时
      */
-    public static ControlEventTraceId fromNullable(String value) {
+    public static ControlEventRequestId fromNullable(String value) {
         return value == null
                 ? null
-                : new ControlEventTraceId(value);
+                : new ControlEventRequestId(value);
     }
 
     private static boolean isWireWhitespace(int codePoint) {

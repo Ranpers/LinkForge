@@ -23,7 +23,7 @@ public sealed interface LinkControlEvent permits
     @SuppressWarnings("unused")
     OffsetDateTime occurredAt();
 
-    ControlEventTraceId traceId();
+    ControlEventRequestId requestId();
 
     String partitionKey();
 }

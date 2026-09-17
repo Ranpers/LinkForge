@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.adapter.out.persistence;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.domain.application.port.out.DomainAvailabilityStore;
 import org.springframework.stereotype.Repository;
 
@@ -20,13 +20,13 @@ public class MybatisDomainAvailabilityStore implements DomainAvailabilityStore {
             UUID actorUserId,
             UUID domainId,
             boolean enabled,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
         Integer result = mapper.change(
                 actorUserId,
                 domainId,
                 enabled,
-                traceId == null ? null : traceId.value()
+                requestId == null ? null : requestId.value()
         );
         return switch (result == null ? 0 : result) {
             case 3 -> ChangeResult.CHANGED;

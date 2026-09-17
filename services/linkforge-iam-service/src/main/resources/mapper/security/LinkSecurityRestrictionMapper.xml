@@ -79,13 +79,13 @@
 
     <insert id="appendSnapshotEvent">
         INSERT INTO t_outbox_event
-            (id, event_type, schema_version, stream_key, partition_key, trace_id, payload)
+            (id, event_type, schema_version, stream_key, partition_key, request_id, payload)
         SELECT event_id,
                'UserLinkSecurityRestrictionsChanged',
                1,
                'USER_LINK_SECURITY:' || #{targetUserId}::text,
                #{targetUserId}::text,
-               #{traceId},
+               #{requestId},
                jsonb_build_object(
                    'eventId', event_id::text,
                    'eventType', 'UserLinkSecurityRestrictionsChanged',
@@ -93,7 +93,7 @@
                    'streamKey', 'USER_LINK_SECURITY:' || #{targetUserId}::text,
                    'revision', #{revision},
                    'occurredAt', occurred_at,
-                   'traceId', #{traceId},
+                   'requestId', #{requestId},
                    'payload', jsonb_build_object(
                        'userId', #{targetUserId}::text,
                        'restrictions', (

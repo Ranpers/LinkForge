@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.webmvc.problem;
 
-import io.github.ranpers.linkforge.webmvc.request.RequestTraceContext;
+import io.github.ranpers.linkforge.webmvc.request.RequestIdContext;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
@@ -57,11 +57,11 @@ public final class ApiSecurityProblemHandler
     ) throws IOException {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-        Object value = request.getAttribute(RequestTraceContext.ATTRIBUTE_NAME);
-        String traceId = value instanceof String id ? id : null;
+        Object value = request.getAttribute(RequestIdContext.ATTRIBUTE_NAME);
+        String requestId = value instanceof String id ? id : null;
         objectMapper.writeValue(
                 response.getOutputStream(),
-                ApiProblems.create(status, code, detail, traceId)
+                ApiProblems.create(status, code, detail, requestId)
         );
     }
 }

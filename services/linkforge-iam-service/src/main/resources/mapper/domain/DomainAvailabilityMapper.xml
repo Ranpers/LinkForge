@@ -43,13 +43,13 @@
         appended AS (
             INSERT INTO t_outbox_event
                 (id, event_type, schema_version, stream_key, partition_key,
-                 trace_id, payload)
+                 request_id, payload)
             SELECT event_id,
                    'DomainAvailabilityChanged',
                    1,
                    'DOMAIN:' || changed.id::text,
                    changed.id::text,
-                   #{traceId},
+                   #{requestId},
                    jsonb_build_object(
                        'eventId', event_id::text,
                        'eventType', 'DomainAvailabilityChanged',
@@ -57,7 +57,7 @@
                        'streamKey', 'DOMAIN:' || changed.id::text,
                        'revision', changed.state_revision,
                        'occurredAt', changed.updated_at,
-                       'traceId', #{traceId},
+                       'requestId', #{requestId},
                        'payload', jsonb_build_object(
                            'domainId', changed.id::text,
                            'host', changed.domain,

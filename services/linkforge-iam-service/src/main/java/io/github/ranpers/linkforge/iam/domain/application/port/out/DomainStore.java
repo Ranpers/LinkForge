@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.application.port.out;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.DomainListItem;
 
 import java.util.UUID;
@@ -22,10 +22,10 @@ public interface DomainStore {
      * @param actorUserId 操作者；需具备 {@code domain:create} 且账号状态正常
      * @param host        已归一化的主机名
      * @param name        可为空的展示名称
-     * @param traceId     可为空；非空时写入控制事件
+     * @param requestId     可为空；非空时写入控制事件
      * @return 创建结果；{@link CreationResult#CREATED} 时 {@link CreationOutcome#created()} 非空
      */
-    CreationOutcome create(UUID actorUserId, String host, String name, ControlEventTraceId traceId);
+    CreationOutcome create(UUID actorUserId, String host, String name, ControlEventRequestId requestId);
 
     /**
      * 更新域名的展示名称。

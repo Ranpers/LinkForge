@@ -30,7 +30,7 @@ public class DomainCommandService implements CreateDomainUseCase, UpdateDomainUs
                 command.actorUserId(),
                 host.value(),
                 command.name(),
-                command.traceId()
+                command.requestId()
         );
         return switch (outcome.result()) {
             case CREATED -> outcome.created();

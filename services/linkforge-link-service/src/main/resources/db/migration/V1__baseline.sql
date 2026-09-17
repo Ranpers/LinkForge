@@ -97,7 +97,7 @@ CREATE TABLE t_inbox_event
     event_type     varchar(64)  NOT NULL,
     schema_version integer      NOT NULL,
     stream_key     varchar(160) NOT NULL,
-    trace_id       varchar(64),
+    request_id       varchar(64),
     processed_at   timestamptz  NOT NULL DEFAULT now(),
     CONSTRAINT ck_inbox_schema_version CHECK (schema_version >= 1)
 );

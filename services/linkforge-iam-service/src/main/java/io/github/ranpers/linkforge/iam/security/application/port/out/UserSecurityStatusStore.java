@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application.port.out;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 
 import java.util.UUID;
 
@@ -15,7 +15,7 @@ public interface UserSecurityStatusStore {
      * @param actorUserId  具备 {@code security:manage} 权限的非空用户标识
      * @param targetUserId 被处置用户的非空标识
      * @param suspended    {@code true} 时确保系统限制存在，{@code false} 时仅撤销系统限制
-     * @param traceId      可为空；非空时将原值写入控制事件
+     * @param requestId      可为空；非空时将原值写入控制事件
      * @return 状态或限制发生变化时返回 {@link ChangeOutcome#CHANGED}；两者均已处于目标状态时返回
      * {@link ChangeOutcome#UNCHANGED}；其余结果表示调用者需要处理的拒绝原因
      */
@@ -23,7 +23,7 @@ public interface UserSecurityStatusStore {
             UUID actorUserId,
             UUID targetUserId,
             boolean suspended,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     );
 
     enum ChangeOutcome {

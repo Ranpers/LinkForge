@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.adapter.out.persistence;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.out.UserSecurityStatusStore;
 import org.springframework.stereotype.Repository;
 
@@ -25,7 +25,7 @@ public class MybatisUserSecurityStatusStore implements UserSecurityStatusStore {
             UUID actorUserId,
             UUID targetUserId,
             boolean suspended,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
         Integer result = mapper.change(actorUserId, targetUserId, suspended);
         ChangeOutcome outcome = switch (result == null ? 0 : result) {
@@ -53,7 +53,7 @@ public class MybatisUserSecurityStatusStore implements UserSecurityStatusStore {
         requireEventAppend(restrictionMapper.appendSnapshotEvent(
                 targetUserId,
                 revision,
-                traceId == null ? null : traceId.value()
+                requestId == null ? null : requestId.value()
         ));
         return ChangeOutcome.CHANGED;
     }

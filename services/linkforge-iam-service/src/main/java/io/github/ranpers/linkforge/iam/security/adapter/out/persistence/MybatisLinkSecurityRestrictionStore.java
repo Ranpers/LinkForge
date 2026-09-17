@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.adapter.out.persistence;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.CreateLinkSecurityRestrictionCommand;
 import io.github.ranpers.linkforge.iam.security.application.port.out.LinkSecurityRestrictionStore;
 import org.springframework.stereotype.Repository;
@@ -35,7 +35,7 @@ public class MybatisLinkSecurityRestrictionStore implements LinkSecurityRestrict
         requireEventAppend(mapper.appendSnapshotEvent(
                 command.targetUserId(),
                 revision,
-                command.traceId() == null ? null : command.traceId().value()
+                command.requestId() == null ? null : command.requestId().value()
         ));
         return new CreateResult(MutationOutcome.CHANGED, restrictionId);
     }
@@ -45,7 +45,7 @@ public class MybatisLinkSecurityRestrictionStore implements LinkSecurityRestrict
             UUID actorUserId,
             UUID targetUserId,
             UUID restrictionId,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
         if (!Boolean.TRUE.equals(mapper.actorAllowed(actorUserId))) {
             return MutationOutcome.DENIED;
@@ -67,7 +67,7 @@ public class MybatisLinkSecurityRestrictionStore implements LinkSecurityRestrict
         requireEventAppend(mapper.appendSnapshotEvent(
                 targetUserId,
                 revision,
-                traceId == null ? null : traceId.value()
+                requestId == null ? null : requestId.value()
         ));
         return MutationOutcome.CHANGED;
     }

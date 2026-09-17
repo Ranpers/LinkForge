@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.adapter.in.web;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.CreateDomainCommand;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.CreateDomainUseCase;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.DomainListItem;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventTraceHeaders.TRACE_ID;
+import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventRequestHeaders.REQUEST_ID;
 
 /**
  * 域名的写侧入口。
@@ -49,13 +49,13 @@ public class DomainCommandController {
     public DomainListItem create(
             JwtAuthenticationToken authentication,
             @Valid @RequestBody CreateDomainRequest request,
-            @RequestHeader(value = TRACE_ID, required = false) String traceId
+            @RequestHeader(value = REQUEST_ID, required = false) String requestId
     ) {
         return createDomain.create(new CreateDomainCommand(
                 UUID.fromString(authentication.getToken().getSubject()),
                 request.domain(),
                 request.name(),
-                ControlEventTraceId.fromNullable(traceId)
+                ControlEventRequestId.fromNullable(requestId)
         ));
     }
 

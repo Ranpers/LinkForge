@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.domain.adapter.in.web;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.domain.application.port.in.ChangeDomainAvailabilityUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventTraceHeaders.TRACE_ID;
+import static io.github.ranpers.linkforge.iam.control.adapter.in.web.ControlEventRequestHeaders.REQUEST_ID;
 
 @RestController
 @RequestMapping("/api/v1/domains")
@@ -33,13 +33,13 @@ public class DomainAvailabilityController {
             JwtAuthenticationToken authentication,
             @PathVariable UUID domainId,
             @Valid @RequestBody ChangeDomainAvailabilityRequest request,
-            @RequestHeader(value = TRACE_ID, required = false) String traceId
+            @RequestHeader(value = REQUEST_ID, required = false) String requestId
     ) {
         changeAvailability.change(
                 UUID.fromString(authentication.getToken().getSubject()),
                 domainId,
                 request.enabled(),
-                ControlEventTraceId.fromNullable(traceId)
+                ControlEventRequestId.fromNullable(requestId)
         );
     }
 }

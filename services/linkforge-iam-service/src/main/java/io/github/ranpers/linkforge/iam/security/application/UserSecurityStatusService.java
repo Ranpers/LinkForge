@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.port.in.ChangeUserSecurityStatusUseCase;
 import io.github.ranpers.linkforge.iam.security.application.port.out.UserSecurityStatusStore;
 import org.springframework.stereotype.Service;
@@ -23,9 +23,9 @@ public class UserSecurityStatusService implements ChangeUserSecurityStatusUseCas
             UUID actorUserId,
             UUID targetUserId,
             boolean suspended,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     ) {
-        switch (store.change(actorUserId, targetUserId, suspended, traceId)) {
+        switch (store.change(actorUserId, targetUserId, suspended, requestId)) {
             case CHANGED, UNCHANGED -> {
             }
             case TARGET_NOT_FOUND -> throw new SecurityTargetUserNotFoundException();

@@ -15,7 +15,7 @@ public interface LinkControlEventMapper {
             @Param("eventType") String eventType,
             @Param("schemaVersion") int schemaVersion,
             @Param("streamKey") String streamKey,
-            @Param("traceId") String traceId
+            @Param("requestId") String requestId
     );
 
     int insertCheckpointIfAbsent(@Param("streamKey") String streamKey);

@@ -176,7 +176,7 @@ CREATE TABLE t_outbox_event
     schema_version  integer       NOT NULL,
     stream_key      varchar(160)  NOT NULL,
     partition_key   varchar(64)   NOT NULL,
-    trace_id        varchar(64),
+    request_id        varchar(64),
     payload         jsonb         NOT NULL,
     status          smallint      NOT NULL DEFAULT 0,
     retry_count     integer       NOT NULL DEFAULT 0,

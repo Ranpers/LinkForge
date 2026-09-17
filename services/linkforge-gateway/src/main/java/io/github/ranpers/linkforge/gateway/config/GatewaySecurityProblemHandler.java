@@ -58,9 +58,9 @@ public final class GatewaySecurityProblemHandler
         problem.setType(URI.create("https://linkforge.dev/problems/"
                 + code.toLowerCase(java.util.Locale.ROOT).replace('_', '-')));
         problem.setProperty("code", code);
-        String traceId = GatewayTraceWebFilter.traceId(exchange);
-        if (traceId != null) {
-            problem.setProperty("traceId", traceId);
+        String requestId = GatewayRequestIdWebFilter.requestId(exchange);
+        if (requestId != null) {
+            problem.setProperty("requestId", requestId);
         }
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_PROBLEM_JSON);

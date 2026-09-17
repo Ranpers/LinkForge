@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.iam.security.application.port.in;
 
-import io.github.ranpers.linkforge.iam.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.iam.security.application.SecurityDispositionDeniedException;
 import io.github.ranpers.linkforge.iam.security.application.SecurityTargetUserNotFoundException;
 import io.github.ranpers.linkforge.iam.security.application.UserSecurityStatusConflictException;
@@ -20,7 +20,7 @@ public interface ChangeUserSecurityStatusUseCase {
      * @param actorUserId  执行安全处置且必须具备 {@code security:manage} 权限的非空用户标识
      * @param targetUserId 被处置用户的非空标识，也是短链安全限制事件的关联标识
      * @param suspended    {@code true} 表示安全冻结，{@code false} 表示解除冻结
-     * @param traceId      可为空；非空时包含 1 至 64 个字符且随控制事件传播
+     * @param requestId      可为空；非空时包含 1 至 64 个字符且随控制事件传播
      * @throws SecurityTargetUserNotFoundException 目标用户不存在时
      * @throws UserSecurityStatusConflictException 用户生命周期状态不允许该转换时
      * @throws SecurityDispositionDeniedException  操作者无安全处置权限时
@@ -31,6 +31,6 @@ public interface ChangeUserSecurityStatusUseCase {
             UUID actorUserId,
             UUID targetUserId,
             boolean suspended,
-            ControlEventTraceId traceId
+            ControlEventRequestId requestId
     );
 }

@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.webmvc.problem;
 
-import io.github.ranpers.linkforge.webmvc.request.RequestTraceContext;
+import io.github.ranpers.linkforge.webmvc.request.RequestIdContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 
@@ -21,24 +21,26 @@ public final class ApiProblems {
      * 创建使用当前请求关联标识的问题响应。
      */
     public static ProblemDetail create(HttpStatus status, String code, String detail) {
-        return create(status, code, detail, RequestTraceContext.currentTraceId());
+        return create(status, code, detail, RequestIdContext.currentRequestId());
     }
 
     /**
      * 创建使用指定关联标识的问题响应。
+     *
+     * @param requestId 要写入响应体的业务关联标识；为 {@code null} 时省略该属性
      */
     public static ProblemDetail create(
             HttpStatus status,
             String code,
             String detail,
-            String traceId
+            String requestId
     ) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(status.getReasonPhrase());
         problem.setType(URI.create(TYPE_PREFIX + code.toLowerCase(Locale.ROOT).replace('_', '-')));
         problem.setProperty("code", code);
-        if (traceId != null) {
-            problem.setProperty("traceId", traceId);
+        if (requestId != null) {
+            problem.setProperty("requestId", requestId);
         }
         return problem;
     }

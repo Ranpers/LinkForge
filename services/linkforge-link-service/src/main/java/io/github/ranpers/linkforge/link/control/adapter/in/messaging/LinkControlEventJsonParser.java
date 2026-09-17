@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.link.control.adapter.in.messaging;
 
-import io.github.ranpers.linkforge.link.control.domain.ControlEventTraceId;
+import io.github.ranpers.linkforge.link.control.domain.ControlEventRequestId;
 import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEventType;
@@ -34,11 +34,11 @@ public class LinkControlEventJsonParser {
         String streamKey = text(root, "streamKey");
         long revision = positiveLong(root, "revision");
         OffsetDateTime occurredAt = dateTime(root, "occurredAt");
-        String traceIdValue = optionalTraceId(root);
+        String requestIdValue = optionalRequestId(root);
         JsonNode payload = payload(root);
 
         try {
-            var traceId = ControlEventTraceId.fromNullable(traceIdValue);
+            var requestId = ControlEventRequestId.fromNullable(requestIdValue);
             return switch (type) {
                 case DOMAIN_AVAILABILITY_CHANGED -> new DomainAvailabilityChanged(
                         eventId,
@@ -46,7 +46,7 @@ public class LinkControlEventJsonParser {
                         streamKey,
                         revision,
                         occurredAt,
-                        traceId,
+                        requestId,
                         uuid(payload, "domainId"),
                         text(payload, "host"),
                         enabled(payload)
@@ -57,7 +57,7 @@ public class LinkControlEventJsonParser {
                         streamKey,
                         revision,
                         occurredAt,
-                        traceId,
+                        requestId,
                         uuid(payload, "userId"),
                         restrictions(payload)
                 );
@@ -133,13 +133,13 @@ public class LinkControlEventJsonParser {
         return value.stringValue();
     }
 
-    private static String optionalTraceId(JsonNode root) {
-        JsonNode value = root.get("traceId");
+    private static String optionalRequestId(JsonNode root) {
+        JsonNode value = root.get("requestId");
         if (value == null || value.isNull()) {
             return null;
         }
         if (!value.isString()) {
-            throw invalid("字段必须是字符串或 null: traceId");
+            throw invalid("字段必须是字符串或 null: requestId");
         }
         return value.stringValue();
     }

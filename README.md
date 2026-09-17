@@ -91,8 +91,9 @@ http://localhost:8080/openapi/linkforge-public-api-v1.yaml
 ```
 
 用户注册使用 `POST /api/v1/users`。API 错误统一返回
-`application/problem+json`，其中 `code` 是供客户端判断的稳定错误码，`traceId`
-与响应头 `X-Trace-Id` 一致。原型阶段数据库结构以当前 `V1__baseline.sql`
+`application/problem+json`，其中 `code` 是供客户端判断的稳定错误码，`requestId`
+与响应头 `X-Request-Id` 一致；该标识用于串联同一次调用，与 OpenTelemetry 传播的
+`traceparent` 是两个互不相关的取值。原型阶段数据库结构以当前 `V1__baseline.sql`
 为准，结构发生变化后应重建本地数据卷。
 
 检查容器和就绪状态：

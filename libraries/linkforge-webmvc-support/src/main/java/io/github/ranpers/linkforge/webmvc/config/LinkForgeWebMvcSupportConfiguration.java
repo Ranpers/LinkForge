@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.webmvc.config;
 
 import io.github.ranpers.linkforge.webmvc.problem.ApiSecurityProblemHandler;
-import io.github.ranpers.linkforge.webmvc.request.RequestTraceFilter;
+import io.github.ranpers.linkforge.webmvc.request.RequestIdFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.ObjectMapper;
@@ -19,13 +19,13 @@ import tools.jackson.databind.ObjectMapper;
 public class LinkForgeWebMvcSupportConfiguration {
 
     /**
-     * 注册请求关联过滤器。
+     * 注册请求关联标识过滤器。
      *
      * @return 优先级为最高、在安全过滤器链之前执行的过滤器
      */
     @Bean
-    RequestTraceFilter requestTraceFilter() {
-        return new RequestTraceFilter();
+    RequestIdFilter requestIdFilter() {
+        return new RequestIdFilter();
     }
 
     /**
