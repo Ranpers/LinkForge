@@ -6,31 +6,43 @@
 
 Gateway 只暴露明确的公共接口：
 
-| 路由                 | 下游服务                 | 接口范围                 | 认证       |
-|----------------------|--------------------------|--------------------------|------------|
-| `iam-authentication` | `linkforge-iam-service`  | 注册、OAuth2、OIDC、登录 | 按协议公开 |
-| `iam-api`            | `linkforge-iam-service`  | 用户与域名管理           | JWT        |
-| `link-api`           | `linkforge-link-service` | 链接与分组管理           | JWT        |
-| `link-redirect`      | `linkforge-link-service` | `/r/**`                  | 公开       |
+| 路由                          | 下游服务                 | 接口范围                           | 认证       |
+|-------------------------------|--------------------------|------------------------------------|------------|
+| `iam-registration`            | `linkforge-iam-service`  | `POST /api/v1/users`               | 公开       |
+| `iam-authentication-metadata` | `linkforge-iam-service`  | `GET /.well-known/**`、`GET /oauth2/jwks` | 公开 |
+| `iam-authentication`          | `linkforge-iam-service`  | `/oauth2/**`、`/userinfo`、登录    | 按协议公开 |
+| `iam-api`                     | `linkforge-iam-service`  | 用户与域名管理                     | JWT        |
+| `link-api`                    | `linkforge-link-service` | 链接与分组管理                     | JWT        |
+| `link-redirect`               | `linkforge-link-service` | `/r/**`                            | 公开       |
 
-`/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。认证、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。
+`/internal/**` 在网关安全链中直接拒绝，服务间授权接口只能在内部网络访问。注册与认证、元数据、业务 API、跳转分别使用独立的 Redis 令牌桶参数。已认证请求以 JWT Subject 作为限流键；匿名请求使用直接对端地址，不默认信任 `X-Forwarded-For`。路由自带显式 order，精确路由压过通配路由，因此 `GET /.well-known/**` 与 `GET /oauth2/jwks` 不会被 `/oauth2/**` 抢走，`POST /api/v1/users` 也不会落到 `iam-api`，两者都不依赖声明顺序。元数据只放行 GET：Spring Authorization Server 的 Discovery 与 JWK Set 由 GET-only 过滤器处理，不存在 MVC 那种 GET 处理器自动承接 HEAD 的语义，其余方法仍落到 `iam-authentication`，按拒绝降级处置。
 
 令牌桶依赖的 Redis 不可用时如何处置按路由显式声明，不从路由 ID 或路径前缀推断：
 
-| 路由                 | Redis 正常     | Redis 不可用                            |
-|----------------------|----------------|-----------------------------------------|
-| `iam-registration`   | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
-| `iam-authentication` | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
-| `iam-api`            | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
-| `link-api`           | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
-| `link-redirect`      | 执行令牌桶判定 | 降级放行，`X-RateLimit-Remaining` 为 -1 |
+| 路由                          | Redis 正常     | Redis 不可用                            |
+|-------------------------------|----------------|-----------------------------------------|
+| `iam-registration`            | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
+| `iam-authentication`          | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
+| `iam-authentication-metadata` | 执行令牌桶判定 | 降级放行，`X-RateLimit-Remaining` 为 -1 |
+| `iam-api`                     | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
+| `link-api`                    | 执行令牌桶判定 | 503 `RATE_LIMITER_UNAVAILABLE`          |
+| `link-redirect`               | 执行令牌桶判定 | 降级放行，`X-RateLimit-Remaining` 为 -1 |
 
 拒绝降级对应两类不同的风险：注册与认证路由失效会扩大口令爆破，IAM 与 Link 管理 API 失效会
 扩大批量写入、权限探测与资源滥用。后者都要过认证与权限校验且含写操作，会消耗数据库、缓存与
-服务间调用，而客户端通常可以安全重试，因此短时 503 比无保护放行更稳妥。跳转路由放行是自觉地
-以可用性优先：它同样有流量洪泛、短码枚举与下游容量风险，但拒绝降级会让全部短链同时失效。
-将来若管理 API 下出现纯公开、只读、以可用性优先的接口，应拆成独立路由单独指定策略，而不是
-沿用该前缀现有的拒绝降级。
+服务间调用，而客户端通常可以安全重试，因此短时 503 比无保护放行更稳妥。
+
+两条放行路由都以可用性优先，理由不同。OIDC Discovery 与 JWK Set 是公开、只读、可缓存的元数据，
+不参与凭据校验，也没有口令爆破面；拒绝降级会让新启动的资源服务器取不到公钥、尚未缓存 JWK 的
+客户端无法验证已有令牌、OIDC 客户端无法完成服务发现，等于把一次 Redis 抖动放大成认证生态的
+元数据故障，而放行并不因此多暴露任何东西。跳转路由不同：它确实有流量洪泛、短码枚举与下游容量
+风险，拒绝降级会让全部短链同时失效，这里是自觉地以可用性优先，用可用性换这些风险在故障期间
+不受控。放行不等于不限流，两条路由在 Redis 正常时照常判定，元数据另用独立令牌桶，不与跳转
+共用配额。
+
+元数据路由是从 `iam-authentication` 中拆出来的：一条路由里同时装着可缓存的公开元数据与要防爆破
+的令牌接口，给不出合适的单一策略。同理，将来若管理 API 下出现纯公开、只读、以可用性优先的
+接口，应拆成独立路由单独指定策略，而不是沿用该前缀现有的拒绝降级。
 
 判定依赖框架在降级时写出的 `X-RateLimit-Remaining: -1`，但只有非负的剩余量才算判定可信：
 标记缺失、无法解析或其他负值都按 `unknown` 处理，与 `unavailable` 一样交由故障策略处置，
