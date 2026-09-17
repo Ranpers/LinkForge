@@ -41,6 +41,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -61,6 +65,9 @@ paths:
       responses:
         '200':
           description: 用户页
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -71,6 +78,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -93,6 +102,9 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -101,6 +113,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -125,6 +141,9 @@ paths:
       responses:
         '201':
           description: 创建成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -137,6 +156,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -159,12 +182,17 @@ paths:
       responses:
         '204':
           description: 撤销成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -187,6 +215,9 @@ paths:
       responses:
         '200':
           description: 域名页
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -197,6 +228,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -216,6 +249,9 @@ paths:
       responses:
         '201':
           description: 创建成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -226,6 +262,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -250,6 +290,9 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -258,6 +301,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -280,6 +327,9 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -288,6 +338,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -316,6 +370,9 @@ paths:
       responses:
         '201':
           description: 创建或幂等重放成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -326,6 +383,10 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -366,6 +427,9 @@ paths:
       responses:
         '200':
           description: 短链页
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -376,6 +440,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -398,6 +464,9 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -406,6 +475,10 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -430,12 +503,19 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -454,12 +534,17 @@ paths:
       responses:
         '204':
           description: 删除成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -477,12 +562,17 @@ paths:
       responses:
         '200':
           description: 分组页
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GroupPage'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -502,6 +592,9 @@ paths:
       responses:
         '201':
           description: 创建成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -510,6 +603,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -528,6 +625,9 @@ paths:
       responses:
         '200':
           description: 分组详情
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
           content:
             application/json:
               schema:
@@ -536,6 +636,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -557,12 +659,19 @@ paths:
       responses:
         '204':
           description: 修改成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '409':
           $ref: '#/components/responses/Conflict'
         '429':
@@ -580,10 +689,15 @@ paths:
       responses:
         '204':
           description: 删除成功
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
         '404':
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -616,6 +730,8 @@ paths:
           $ref: '#/components/responses/NotFound'
         '405':
           $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
         '500':
@@ -702,6 +818,9 @@ components:
   responses:
     BadRequest:
       description: 请求参数不合法
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
@@ -720,48 +839,90 @@ components:
             $ref: '#/components/schemas/Problem'
     Forbidden:
       description: 当前主体无权执行操作
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     NotFound:
       description: 资源不存在或不可用
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     Conflict:
       description: 当前状态或唯一约束冲突
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     Unavailable:
       description: 依赖服务暂时不可用
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     MethodNotAllowed:
       description: 路径存在但该 HTTP 方法不受支持
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     TooManyRequests:
       description: 超出该主体的请求配额
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     InternalError:
       description: 服务端未能处理请求
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/Problem'
     GatewayTimeout:
       description: 上游服务响应超时
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotAcceptable:
+      description: 无法按客户端 Accept 头生成响应
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: 请求体媒体类型不受支持
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/problem+json:
           schema:
