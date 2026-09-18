@@ -3,7 +3,7 @@ package io.github.ranpers.linkforge.link.control.adapter.out.persistence;
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlCheckpoint;
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlInbox;
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlProjection;
-import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
+import io.github.ranpers.linkforge.link.control.domain.ShortDomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import io.github.ranpers.linkforge.link.control.domain.UserLinkSecurityRestrictionsChanged;
 import org.springframework.stereotype.Repository;
@@ -55,8 +55,8 @@ public class MybatisLinkControlEventStateStore implements
     @Override
     public int apply(LinkControlEvent event) {
         return switch (event) {
-            case DomainAvailabilityChanged domain -> mapper.upsertDomainState(
-                    domain.domainId(), domain.host(), domain.enabled(), domain.revision()
+            case ShortDomainAvailabilityChanged shortDomain -> mapper.upsertShortDomainState(
+                    shortDomain.shortDomainId(), shortDomain.host(), shortDomain.enabled(), shortDomain.revision()
             );
             case UserLinkSecurityRestrictionsChanged user -> {
                 int changed = mapper.deleteUserRestrictions(user.userId());

@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.link.resolution.adapter.out.persistence;
 
-import io.github.ranpers.linkforge.link.resolution.application.port.out.DomainRuntimeState;
+import io.github.ranpers.linkforge.link.resolution.application.port.out.ShortDomainRuntimeState;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeFactSource;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeFacts;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.UserSecurityRestriction;
@@ -31,12 +31,12 @@ public class MybatisLinkResolutionQuery implements LinkRuntimeFactSource {
     }
 
     @Override
-    public Optional<DomainRuntimeState> findDomain(java.util.UUID domainId) {
-        DomainRuntimeStateRow row = mapper.findDomain(domainId);
+    public Optional<ShortDomainRuntimeState> findShortDomain(java.util.UUID shortDomainId) {
+        ShortDomainRuntimeStateRow row = mapper.findShortDomain(shortDomainId);
         return row == null
                 ? Optional.empty()
-                : Optional.of(new DomainRuntimeState(
-                        row.domainId(), row.enabled(), row.revision()
+                : Optional.of(new ShortDomainRuntimeState(
+                        row.shortDomainId(), row.enabled(), row.revision()
                 ));
     }
 
@@ -65,7 +65,7 @@ public class MybatisLinkResolutionQuery implements LinkRuntimeFactSource {
     private static LinkRuntimeFacts toFacts(LinkResolutionRow row) {
         return new LinkRuntimeFacts(
                 row.linkId(),
-                row.domainId(),
+                row.shortDomainId(),
                 row.createdByUserId(),
                 row.host(),
                 row.linkCode(),

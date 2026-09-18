@@ -23,10 +23,10 @@ public interface LinkRuntimeCache {
     /**
      * 读取没有处于变更屏障中的域名状态。
      *
-     * @param domainId 域名唯一标识
+     * @param shortDomainId 域名唯一标识
      * @return 命中的域名状态，未命中时为空
      */
-    Optional<DomainRuntimeState> findDomain(UUID domainId);
+    Optional<ShortDomainRuntimeState> findShortDomain(UUID shortDomainId);
 
     /**
      * 读取没有处于变更屏障中的用户安全限制。
@@ -46,9 +46,9 @@ public interface LinkRuntimeCache {
     /**
      * 缓存域名状态；对应键存在写屏障时忽略本次普通回源写入。
      *
-     * @param domain 要按域名标识缓存的运行时状态
+     * @param shortDomain 要按域名标识缓存的运行时状态
      */
-    void putDomain(DomainRuntimeState domain);
+    void putShortDomain(ShortDomainRuntimeState shortDomain);
 
     /**
      * 缓存用户安全限制；对应键存在写屏障时忽略本次普通回源写入。
@@ -87,27 +87,27 @@ public interface LinkRuntimeCache {
     /**
      * 原子地建立域名控制状态写屏障并删除当前缓存值。
      *
-     * @param domainId 域名唯一标识
+     * @param shortDomainId 域名唯一标识
      * @return 当前事务用于完成或撤销屏障的唯一令牌
      * @throws RuntimeCacheMutationException Redis 无法确认屏障已经建立时
      */
-    String beginDomainMutation(UUID domainId);
+    String beginShortDomainMutation(UUID shortDomainId);
 
     /**
      * 原子地写入已提交的域名状态并释放写屏障。
      *
-     * @param domain 已提交的最新域名状态
+     * @param shortDomain 已提交的最新域名状态
      * @param token  建立屏障时返回的唯一令牌
      */
-    void completeDomainMutation(DomainRuntimeState domain, String token);
+    void completeShortDomainMutation(ShortDomainRuntimeState shortDomain, String token);
 
     /**
      * 释放已回滚域名控制事务留下的写屏障。
      *
-     * @param domainId 已回滚控制事件对应的域名标识
+     * @param shortDomainId 已回滚控制事件对应的域名标识
      * @param token    建立屏障时返回的唯一令牌
      */
-    void cancelDomainMutation(UUID domainId, String token);
+    void cancelShortDomainMutation(UUID shortDomainId, String token);
 
     /**
      * 原子地建立用户安全限制写屏障并删除当前缓存值。

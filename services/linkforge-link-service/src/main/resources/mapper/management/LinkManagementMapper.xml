@@ -8,7 +8,7 @@
     <select id="find"
             resultType="io.github.ranpers.linkforge.link.management.adapter.out.persistence.LinkManagementRow">
         SELECT id AS linkId,
-               domain_id AS domainId,
+               short_domain_id AS shortDomainId,
                created_by_user_id AS createdByUserId
         FROM t_link
         WHERE id = #{linkId}

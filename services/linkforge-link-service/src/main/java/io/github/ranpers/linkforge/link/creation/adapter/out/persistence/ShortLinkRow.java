@@ -14,7 +14,7 @@ public record ShortLinkRow(
         ShortCodeType codeType,
         String fullUrl,
         int sortOrder,
-        UUID domainId,
+        UUID shortDomainId,
         OffsetDateTime expiresAt,
         String idempotencyKey,
         String requestFingerprint,

@@ -2,7 +2,7 @@ package io.github.ranpers.linkforge.link.resolution.adapter.out.cache;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.github.ranpers.linkforge.link.resolution.application.port.out.DomainRuntimeState;
+import io.github.ranpers.linkforge.link.resolution.application.port.out.ShortDomainRuntimeState;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeCache;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeFacts;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.RuntimeCacheMutationException;
@@ -123,8 +123,8 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
     }
 
     @Override
-    public Optional<DomainRuntimeState> findDomain(UUID domainId) {
-        return read(domainKey(domainId), DomainRuntimeState.class);
+    public Optional<ShortDomainRuntimeState> findShortDomain(UUID shortDomainId) {
+        return read(shortDomainKey(shortDomainId), ShortDomainRuntimeState.class);
     }
 
     @Override
@@ -143,11 +143,11 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
     }
 
     @Override
-    public void putDomain(DomainRuntimeState domain) {
+    public void putShortDomain(ShortDomainRuntimeState shortDomain) {
         writeIfNewer(
-                domainKey(domain.domainId()),
-                domain.revision(),
-                domain,
+                shortDomainKey(shortDomain.shortDomainId()),
+                shortDomain.revision(),
+                shortDomain,
                 properties.getControlTtl()
         );
     }
@@ -184,24 +184,24 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
     }
 
     @Override
-    public String beginDomainMutation(UUID domainId) {
-        return beginMutation(domainKey(domainId));
+    public String beginShortDomainMutation(UUID shortDomainId) {
+        return beginMutation(shortDomainKey(shortDomainId));
     }
 
     @Override
-    public void completeDomainMutation(DomainRuntimeState domain, String token) {
+    public void completeShortDomainMutation(ShortDomainRuntimeState shortDomain, String token) {
         completeMutation(
-                domainKey(domain.domainId()),
-                domain.revision(),
-                domain,
+                shortDomainKey(shortDomain.shortDomainId()),
+                shortDomain.revision(),
+                shortDomain,
                 properties.getControlTtl(),
                 token
         );
     }
 
     @Override
-    public void cancelDomainMutation(UUID domainId, String token) {
-        cancelMutation(domainKey(domainId), token);
+    public void cancelShortDomainMutation(UUID shortDomainId, String token) {
+        cancelMutation(shortDomainKey(shortDomainId), token);
     }
 
     @Override
@@ -337,8 +337,8 @@ public class RedisLinkRuntimeCache implements LinkRuntimeCache {
         return "lf:link:{" + host + ":" + linkCode + "}";
     }
 
-    private static String domainKey(UUID domainId) {
-        return "lf:domain-state:{" + domainId + "}";
+    private static String shortDomainKey(UUID shortDomainId) {
+        return "lf:short-domain-state:{" + shortDomainId + "}";
     }
 
     private static String restrictionsKey(UUID userId) {

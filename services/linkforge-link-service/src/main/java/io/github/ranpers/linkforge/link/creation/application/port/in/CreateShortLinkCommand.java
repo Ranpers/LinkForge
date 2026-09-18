@@ -12,7 +12,7 @@ import java.util.UUID;
  * @param shortCodeRequest 自动分配或自定义短码请求，不允许为空
  * @param fullUrl          非空且不超过 2048 个字符的绝对 HTTP(S) 跳转地址
  * @param sortOrder        同组排序值，允许任意 32 位有符号整数
- * @param domainId         承载该短码且已由 IAM 管理的非空域名标识
+ * @param shortDomainId         承载该短码且已由 IAM 管理的非空域名标识
  * @param expiresAt        可为空的带偏移量过期时刻；非空时必须晚于实际创建时刻
  * @param idempotencyKey   操作者范围内非空且不超过 128 个字符的幂等键；
  *                         相同键必须对应相同请求内容
@@ -24,7 +24,7 @@ public record CreateShortLinkCommand(
         ShortCodeRequest shortCodeRequest,
         String fullUrl,
         int sortOrder,
-        UUID domainId,
+        UUID shortDomainId,
         OffsetDateTime expiresAt,
         String idempotencyKey
 ) {

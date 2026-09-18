@@ -3,7 +3,7 @@ package io.github.ranpers.linkforge.link.control.domain;
 import java.util.Arrays;
 
 public enum LinkControlEventType {
-    DOMAIN_AVAILABILITY_CHANGED("DomainAvailabilityChanged"),
+    SHORT_DOMAIN_AVAILABILITY_CHANGED("ShortDomainAvailabilityChanged"),
     USER_LINK_SECURITY_RESTRICTIONS_CHANGED("UserLinkSecurityRestrictionsChanged");
 
     private final String wireName;

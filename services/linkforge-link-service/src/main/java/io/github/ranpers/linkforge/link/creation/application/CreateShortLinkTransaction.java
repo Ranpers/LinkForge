@@ -138,7 +138,7 @@ public class CreateShortLinkTransaction {
                 shortCode,
                 command.fullUrl(),
                 command.sortOrder(),
-                command.domainId(),
+                command.shortDomainId(),
                 command.expiresAt(),
                 command.idempotencyKey(),
                 fingerprint,
@@ -155,7 +155,7 @@ public class CreateShortLinkTransaction {
         if (repository.existsById(linkId)) {
             throw new ShortLinkPersistenceInvariantException();
         }
-        if (repository.existsByDomainAndCode(command.domainId(), shortCode)) {
+        if (repository.existsByShortDomainAndCode(command.shortDomainId(), shortCode)) {
             return Optional.empty();
         }
         if (command.groupId() != null

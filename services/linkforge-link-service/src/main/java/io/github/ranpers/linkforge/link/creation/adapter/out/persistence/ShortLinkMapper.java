@@ -22,8 +22,8 @@ public interface ShortLinkMapper {
 
     boolean existsById(@Param("linkId") UUID linkId);
 
-    boolean existsByDomainAndCode(
-            @Param("domainId") UUID domainId,
+    boolean existsByShortDomainAndCode(
+            @Param("shortDomainId") UUID shortDomainId,
             @Param("linkCode") String linkCode
     );
 }

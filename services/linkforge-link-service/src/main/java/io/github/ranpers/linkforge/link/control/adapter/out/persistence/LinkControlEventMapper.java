@@ -24,8 +24,8 @@ public interface LinkControlEventMapper {
 
     int advanceCheckpoint(@Param("streamKey") String streamKey, @Param("revision") long revision);
 
-    int upsertDomainState(
-            @Param("domainId") UUID domainId,
+    int upsertShortDomainState(
+            @Param("shortDomainId") UUID shortDomainId,
             @Param("host") String host,
             @Param("enabled") boolean enabled,
             @Param("revision") long revision

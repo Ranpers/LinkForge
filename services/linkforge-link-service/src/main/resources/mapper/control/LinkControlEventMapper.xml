@@ -34,15 +34,15 @@
           AND last_applied_revision &lt; #{revision}
     </update>
 
-    <insert id="upsertDomainState">
-        INSERT INTO t_domain_state (domain_id, host, enabled, revision)
-        VALUES (#{domainId}, #{host}, #{enabled}, #{revision})
-        ON CONFLICT (domain_id) DO UPDATE
+    <insert id="upsertShortDomainState">
+        INSERT INTO t_short_domain_state (short_domain_id, host, enabled, revision)
+        VALUES (#{shortDomainId}, #{host}, #{enabled}, #{revision})
+        ON CONFLICT (short_domain_id) DO UPDATE
         SET host = EXCLUDED.host,
             enabled = EXCLUDED.enabled,
             revision = EXCLUDED.revision,
             updated_at = now()
-        WHERE t_domain_state.revision &lt; EXCLUDED.revision
+        WHERE t_short_domain_state.revision &lt; EXCLUDED.revision
     </insert>
 
     <delete id="deleteUserRestrictions">

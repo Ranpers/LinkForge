@@ -39,8 +39,8 @@ public class MybatisShortLinkRepository implements ShortLinkRepository {
     }
 
     @Override
-    public boolean existsByDomainAndCode(UUID domainId, ShortCode shortCode) {
-        return mapper.existsByDomainAndCode(domainId, shortCode.value());
+    public boolean existsByShortDomainAndCode(UUID shortDomainId, ShortCode shortCode) {
+        return mapper.existsByShortDomainAndCode(shortDomainId, shortCode.value());
     }
 
     private static ShortLink toDomain(ShortLinkRow row) {
@@ -52,7 +52,7 @@ public class MybatisShortLinkRepository implements ShortLinkRepository {
                 new ShortCode(row.linkCode(), row.codeType()),
                 row.fullUrl(),
                 row.sortOrder(),
-                row.domainId(),
+                row.shortDomainId(),
                 row.expiresAt(),
                 row.idempotencyKey(),
                 row.requestFingerprint(),

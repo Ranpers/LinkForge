@@ -54,9 +54,9 @@ public interface ShortLinkRepository {
     /**
      * 判断域名内短码是否已经被永久占用。
      *
-     * @param domainId  非空的域名标识
+     * @param shortDomainId  非空的域名标识
      * @param shortCode 非空的候选短码
      * @return 任意短链占用该组合时为 {@code true}，包括已软删除记录
      */
-    boolean existsByDomainAndCode(UUID domainId, ShortCode shortCode);
+    boolean existsByShortDomainAndCode(UUID shortDomainId, ShortCode shortCode);
 }

@@ -7,9 +7,9 @@
 
     <sql id="linkRuntimeColumns">
         SELECT link.id AS linkId,
-               link.domain_id AS domainId,
+               link.short_domain_id AS shortDomainId,
                link.created_by_user_id AS createdByUserId,
-               domain.host,
+               short_domain.host,
                link.link_code AS linkCode,
                link.full_url AS targetUrl,
                link.status AS linkStatus,
@@ -18,13 +18,14 @@
                link.created_at AS createdAt,
                link.revision
         FROM t_link link
-                 JOIN t_domain_state domain ON domain.domain_id = link.domain_id
+                 JOIN t_short_domain_state short_domain
+                 ON short_domain.short_domain_id = link.short_domain_id
     </sql>
 
     <select id="findLinkByRoute"
             resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.LinkResolutionRow">
         <include refid="linkRuntimeColumns"/>
-        WHERE domain.host = #{host}
+        WHERE short_domain.host = #{host}
           AND link.link_code = #{linkCode}
     </select>
 
@@ -34,13 +35,13 @@
         WHERE link.id = #{linkId}
     </select>
 
-    <select id="findDomain"
-            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.DomainRuntimeStateRow">
-        SELECT domain_id AS domainId,
+    <select id="findShortDomain"
+            resultType="io.github.ranpers.linkforge.link.resolution.adapter.out.persistence.ShortDomainRuntimeStateRow">
+        SELECT short_domain_id AS shortDomainId,
                enabled,
                revision
-        FROM t_domain_state
-        WHERE domain_id = #{domainId}
+        FROM t_short_domain_state
+        WHERE short_domain_id = #{shortDomainId}
     </select>
 
     <select id="findRestrictionRevision" resultType="long">

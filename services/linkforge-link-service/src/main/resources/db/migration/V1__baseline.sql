@@ -1,15 +1,15 @@
 -- LinkForge Link prototype baseline.
 -- Runtime control facts are projected into small tables; link rows are never mass-updated.
 
-CREATE TABLE t_domain_state
+CREATE TABLE t_short_domain_state
 (
-    domain_id  uuid PRIMARY KEY,
-    host       varchar(253) NOT NULL UNIQUE,
-    enabled    boolean      NOT NULL,
-    revision   bigint       NOT NULL,
-    updated_at timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT ck_domain_state_revision CHECK (revision >= 1),
-    CONSTRAINT ck_domain_state_host CHECK (host = lower(host) AND host !~ '[/:]')
+    short_domain_id uuid PRIMARY KEY,
+    host            varchar(253) NOT NULL UNIQUE,
+    enabled         boolean      NOT NULL,
+    revision        bigint       NOT NULL,
+    updated_at      timestamptz  NOT NULL DEFAULT now(),
+    CONSTRAINT ck_short_domain_state_revision CHECK (revision >= 1),
+    CONSTRAINT ck_short_domain_state_host CHECK (host = lower(host) AND host !~ '[/:]')
 );
 
 CREATE TABLE t_group
@@ -37,7 +37,7 @@ CREATE TABLE t_link
     code_type           varchar(16)   NOT NULL,
     full_url            varchar(2048) NOT NULL,
     sort_order          integer       NOT NULL DEFAULT 0,
-    domain_id           uuid          NOT NULL REFERENCES t_domain_state (domain_id) ON DELETE RESTRICT,
+    short_domain_id     uuid          NOT NULL REFERENCES t_short_domain_state (short_domain_id) ON DELETE RESTRICT,
     status              varchar(16)   NOT NULL DEFAULT 'ACTIVE',
     disabled_reason_code varchar(64),
     expires_at          timestamptz,
@@ -47,7 +47,7 @@ CREATE TABLE t_link
     deleted_at          timestamptz,
     created_at          timestamptz   NOT NULL DEFAULT now(),
     updated_at          timestamptz   NOT NULL DEFAULT now(),
-    CONSTRAINT uq_link_domain_code UNIQUE (domain_id, link_code),
+    CONSTRAINT uq_link_short_domain_code UNIQUE (short_domain_id, link_code),
     CONSTRAINT ck_link_code CHECK (
         (code_type = 'GENERATED' AND link_code ~ '^[0-9A-Za-z]{10}$')
         OR (code_type = 'CUSTOM' AND link_code ~ '^[A-Za-z0-9_-]{4,32}$')
@@ -66,7 +66,7 @@ CREATE TABLE t_link
 );
 CREATE INDEX idx_link_creator ON t_link (created_by_user_id, created_at DESC);
 CREATE INDEX idx_link_group ON t_link (group_id, sort_order);
-CREATE INDEX idx_link_domain_created ON t_link (domain_id, created_at DESC);
+CREATE INDEX idx_link_short_domain_created ON t_link (short_domain_id, created_at DESC);
 CREATE UNIQUE INDEX uq_link_creator_idempotency
     ON t_link (created_by_user_id, idempotency_key)
     WHERE idempotency_key IS NOT NULL;
@@ -110,5 +110,5 @@ CREATE TABLE t_stream_checkpoint
     CONSTRAINT ck_stream_checkpoint_revision CHECK (last_applied_revision >= 0)
 );
 
-INSERT INTO t_domain_state (domain_id, host, enabled, revision)
+INSERT INTO t_short_domain_state (short_domain_id, host, enabled, revision)
 VALUES ('01991d2e-0000-7000-8000-000000000001', 'go.linkforge.dev', TRUE, 1);

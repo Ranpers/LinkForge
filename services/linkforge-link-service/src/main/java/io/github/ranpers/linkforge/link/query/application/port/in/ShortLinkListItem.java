@@ -13,7 +13,7 @@ public record ShortLinkListItem(
         String codeType,
         String fullUrl,
         int sortOrder,
-        UUID domainId,
+        UUID shortDomainId,
         String status,
         String disabledReasonCode,
         Instant expiresAt,

@@ -15,7 +15,7 @@
                code_type AS codeType,
                full_url AS fullUrl,
                sort_order AS sortOrder,
-               domain_id AS domainId,
+               short_domain_id AS shortDomainId,
                status,
                disabled_reason_code AS disabledReasonCode,
                expires_at AS expiresAt,
@@ -27,8 +27,8 @@
         <if test="criteria.createdByUserId != null">
             AND created_by_user_id = #{criteria.createdByUserId}
         </if>
-        <if test="criteria.domainId != null">
-            AND domain_id = #{criteria.domainId}
+        <if test="criteria.shortDomainId != null">
+            AND short_domain_id = #{criteria.shortDomainId}
         </if>
         <if test="criteria.status != null">
             AND status = #{criteria.status}

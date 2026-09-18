@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record LinkRuntimeFacts(
         UUID linkId,
-        UUID domainId,
+        UUID shortDomainId,
         UUID createdByUserId,
         String host,
         String linkCode,

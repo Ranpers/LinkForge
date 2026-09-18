@@ -1,7 +1,7 @@
 package io.github.ranpers.linkforge.link.control.adapter.in.messaging;
 
 import io.github.ranpers.linkforge.link.control.domain.ControlEventRequestId;
-import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
+import io.github.ranpers.linkforge.link.control.domain.ShortDomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEventType;
 import io.github.ranpers.linkforge.link.control.domain.LinkSecurityRestriction;
@@ -40,14 +40,14 @@ public class LinkControlEventJsonParser {
         try {
             var requestId = ControlEventRequestId.fromNullable(requestIdValue);
             return switch (type) {
-                case DOMAIN_AVAILABILITY_CHANGED -> new DomainAvailabilityChanged(
+                case SHORT_DOMAIN_AVAILABILITY_CHANGED -> new ShortDomainAvailabilityChanged(
                         eventId,
                         schemaVersion,
                         streamKey,
                         revision,
                         occurredAt,
                         requestId,
-                        uuid(payload, "domainId"),
+                        uuid(payload, "shortDomainId"),
                         text(payload, "host"),
                         enabled(payload)
                 );

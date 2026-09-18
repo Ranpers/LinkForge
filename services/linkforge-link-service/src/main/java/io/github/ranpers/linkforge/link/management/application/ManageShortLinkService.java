@@ -73,7 +73,7 @@ public class ManageShortLinkService implements ManageShortLinkUseCase {
     ) {
         LinkManagementAuthorization decision = authorization.validate(
                 actorUserId,
-                link.domainId(),
+                link.shortDomainId(),
                 link.createdByUserId(),
                 action
         );

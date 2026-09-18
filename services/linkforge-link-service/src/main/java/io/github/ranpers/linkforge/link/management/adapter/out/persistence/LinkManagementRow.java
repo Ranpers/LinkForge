@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public record LinkManagementRow(
         UUID linkId,
-        UUID domainId,
+        UUID shortDomainId,
         UUID createdByUserId
 ) {
 }

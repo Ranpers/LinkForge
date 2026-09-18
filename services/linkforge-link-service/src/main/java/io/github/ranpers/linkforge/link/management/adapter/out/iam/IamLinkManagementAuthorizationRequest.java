@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public record IamLinkManagementAuthorizationRequest(
         UUID actorUserId,
-        UUID domainId,
+        UUID shortDomainId,
         UUID createdByUserId,
         LinkManagementAction action
 ) {

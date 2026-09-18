@@ -22,10 +22,10 @@ public interface LinkRuntimeFactSource {
     Optional<LinkRuntimeFacts> findLink(UUID linkId);
 
     /**
-     * @param domainId 域名唯一标识
+     * @param shortDomainId 域名唯一标识
      * @return 域名运行时状态，不存在时为空
      */
-    Optional<DomainRuntimeState> findDomain(UUID domainId);
+    Optional<ShortDomainRuntimeState> findShortDomain(UUID shortDomainId);
 
     /**
      * 返回用户当前全部活动限制。

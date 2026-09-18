@@ -16,7 +16,7 @@ import java.util.UUID;
  * @param shortCode          非空且已按分配方式完成校验的公开短码
  * @param fullUrl            非空且不超过 2048 个字符的绝对 HTTP(S) URL
  * @param sortOrder          同组排序值，允许任意 32 位有符号整数
- * @param domainId           非空的短链域名标识，也是短码唯一性的作用域
+ * @param shortDomainId           非空的短链域名标识，也是短码唯一性的作用域
  * @param expiresAt          可为空的带偏移量过期时刻；非空时必须晚于 {@code createdAt}
  * @param idempotencyKey     创建者范围内非空且不超过 128 个字符的幂等键
  * @param requestFingerprint 当前创建请求的 64 位小写 SHA-256 十六进制指纹
@@ -30,7 +30,7 @@ public record ShortLink(
         ShortCode shortCode,
         String fullUrl,
         int sortOrder,
-        UUID domainId,
+        UUID shortDomainId,
         OffsetDateTime expiresAt,
         String idempotencyKey,
         String requestFingerprint,
@@ -39,7 +39,7 @@ public record ShortLink(
     public ShortLink {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(createdByUserId, "createdByUserId");
-        Objects.requireNonNull(domainId, "domainId");
+        Objects.requireNonNull(shortDomainId, "shortDomainId");
         Objects.requireNonNull(createdAt, "createdAt");
         name = requireText(name, "name", 64);
         Objects.requireNonNull(shortCode, "shortCode");

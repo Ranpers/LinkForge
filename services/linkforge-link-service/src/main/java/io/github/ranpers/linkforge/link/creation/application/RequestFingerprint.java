@@ -21,7 +21,7 @@ final class RequestFingerprint {
             addShortCodeRequest(digest, command.shortCodeRequest());
             add(digest, command.fullUrl());
             add(digest, command.sortOrder());
-            add(digest, command.domainId());
+            add(digest, command.shortDomainId());
             add(digest, command.expiresAt());
             return java.util.HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException exception) {

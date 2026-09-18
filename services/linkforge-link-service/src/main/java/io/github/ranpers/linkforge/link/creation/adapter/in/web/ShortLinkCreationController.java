@@ -50,7 +50,7 @@ public class ShortLinkCreationController {
                                 : ShortCodeRequest.custom(request.linkCode()),
                         request.fullUrl(),
                         request.sortOrder() == null ? 0 : request.sortOrder(),
-                        request.domainId(),
+                        request.shortDomainId(),
                         request.expiresAt(),
                         idempotencyKey
                 )

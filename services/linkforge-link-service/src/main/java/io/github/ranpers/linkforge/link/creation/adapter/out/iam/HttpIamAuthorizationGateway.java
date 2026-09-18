@@ -19,11 +19,11 @@ public class HttpIamAuthorizationGateway implements IamAuthorizationGateway {
     }
 
     @Override
-    public LinkCreationAuthorization validate(UUID userId, UUID domainId) {
+    public LinkCreationAuthorization validate(UUID userId, UUID shortDomainId) {
         try {
             IamLinkCreationAuthorizationResponse response = iamClient.post(
                     "/internal/v1/authorizations/link-creation",
-                    new IamLinkCreationAuthorizationRequest(userId, domainId),
+                    new IamLinkCreationAuthorizationRequest(userId, shortDomainId),
                     IamLinkCreationAuthorizationResponse.class
             );
             return new LinkCreationAuthorization(

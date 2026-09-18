@@ -20,7 +20,7 @@ public class MybatisLinkManagementRepository implements LinkManagementRepository
         LinkManagementRow row = mapper.find(linkId);
         return row == null
                 ? null
-                : new LinkManagementSnapshot(row.linkId(), row.domainId(), row.createdByUserId());
+                : new LinkManagementSnapshot(row.linkId(), row.shortDomainId(), row.createdByUserId());
     }
 
     @Override

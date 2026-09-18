@@ -23,7 +23,7 @@ public class HttpIamLinkManagementAuthorizationGateway
     @Override
     public LinkManagementAuthorization validate(
             UUID actorUserId,
-            UUID domainId,
+            UUID shortDomainId,
             UUID createdByUserId,
             LinkManagementAction action
     ) {
@@ -32,7 +32,7 @@ public class HttpIamLinkManagementAuthorizationGateway
                     "/internal/v1/authorizations/link-management",
                     new IamLinkManagementAuthorizationRequest(
                             actorUserId,
-                            domainId,
+                            shortDomainId,
                             createdByUserId,
                             action
                     ),

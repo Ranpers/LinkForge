@@ -15,7 +15,7 @@ public interface LinkManagementAuthorizationGateway {
      * 获取操作者针对既有短链执行指定动作的实时决策。
      *
      * @param actorUserId 发起操作的用户
-     * @param domainId 短链所属域名
+     * @param shortDomainId 短链所属域名
      * @param createdByUserId 短链创建者
      * @param action 请求执行的动作
      * @return IAM 返回的完整决策；业务拒绝通过 {@code allowed=false} 表达
@@ -23,7 +23,7 @@ public interface LinkManagementAuthorizationGateway {
      */
     LinkManagementAuthorization validate(
             UUID actorUserId,
-            UUID domainId,
+            UUID shortDomainId,
             UUID createdByUserId,
             LinkManagementAction action
     );

@@ -15,7 +15,7 @@ public interface LinkResolutionMapper {
 
     LinkResolutionRow findLinkById(@Param("linkId") UUID linkId);
 
-    DomainRuntimeStateRow findDomain(@Param("domainId") UUID domainId);
+    ShortDomainRuntimeStateRow findShortDomain(@Param("shortDomainId") UUID shortDomainId);
 
     Long findRestrictionRevision(@Param("streamKey") String streamKey);
 

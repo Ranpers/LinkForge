@@ -1,11 +1,11 @@
 package io.github.ranpers.linkforge.link.resolution.adapter.out.cache;
 
 import io.github.ranpers.linkforge.link.control.application.port.out.LinkControlCache;
-import io.github.ranpers.linkforge.link.control.domain.DomainAvailabilityChanged;
+import io.github.ranpers.linkforge.link.control.domain.ShortDomainAvailabilityChanged;
 import io.github.ranpers.linkforge.link.control.domain.LinkControlEvent;
 import io.github.ranpers.linkforge.link.control.domain.UserLinkSecurityRestrictionsChanged;
 import io.github.ranpers.linkforge.link.management.application.port.out.LinkManagementCache;
-import io.github.ranpers.linkforge.link.resolution.application.port.out.DomainRuntimeState;
+import io.github.ranpers.linkforge.link.resolution.application.port.out.ShortDomainRuntimeState;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeCache;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeFactSource;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.UserSecurityRestriction;
@@ -40,7 +40,7 @@ public class RuntimeCacheCoordinator implements LinkControlCache, LinkManagement
     @Override
     public void synchronizeMutation(LinkControlEvent event) {
         switch (event) {
-            case DomainAvailabilityChanged domain -> synchronizeDomain(domain);
+            case ShortDomainAvailabilityChanged shortDomain -> synchronizeShortDomain(shortDomain);
             case UserLinkSecurityRestrictionsChanged user -> synchronizeRestrictions(user);
         }
     }
@@ -56,14 +56,14 @@ public class RuntimeCacheCoordinator implements LinkControlCache, LinkManagement
         );
     }
 
-    private void synchronizeDomain(DomainAvailabilityChanged event) {
-        DomainRuntimeState domain = new DomainRuntimeState(
-                event.domainId(), event.enabled(), event.revision()
+    private void synchronizeShortDomain(ShortDomainAvailabilityChanged event) {
+        ShortDomainRuntimeState shortDomain = new ShortDomainRuntimeState(
+                event.shortDomainId(), event.enabled(), event.revision()
         );
-        String token = cache.beginDomainMutation(event.domainId());
+        String token = cache.beginShortDomainMutation(event.shortDomainId());
         afterCompletion(
-                () -> cache.completeDomainMutation(domain, token),
-                () -> cache.cancelDomainMutation(event.domainId(), token)
+                () -> cache.completeShortDomainMutation(shortDomain, token),
+                () -> cache.cancelShortDomainMutation(event.shortDomainId(), token)
         );
     }
 

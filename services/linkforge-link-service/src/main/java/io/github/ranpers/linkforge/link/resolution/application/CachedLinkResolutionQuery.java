@@ -1,6 +1,6 @@
 package io.github.ranpers.linkforge.link.resolution.application;
 
-import io.github.ranpers.linkforge.link.resolution.application.port.out.DomainRuntimeState;
+import io.github.ranpers.linkforge.link.resolution.application.port.out.ShortDomainRuntimeState;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkResolutionQuery;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkResolutionSnapshot;
 import io.github.ranpers.linkforge.link.resolution.application.port.out.LinkRuntimeCache;
@@ -32,10 +32,10 @@ public class CachedLinkResolutionQuery implements LinkResolutionQuery {
         if (link == null) {
             return Optional.empty();
         }
-        DomainRuntimeState domain = cache.findDomain(link.domainId())
-                .or(() -> loadDomain(link))
+        ShortDomainRuntimeState shortDomain = cache.findShortDomain(link.shortDomainId())
+                .or(() -> loadShortDomain(link))
                 .orElse(null);
-        if (domain == null) {
+        if (shortDomain == null) {
             return Optional.empty();
         }
         UserSecurityRestrictionSet restrictions =
@@ -48,7 +48,7 @@ public class CachedLinkResolutionQuery implements LinkResolutionQuery {
                 link.status(),
                 link.deletedAt(),
                 link.expiresAt(),
-                domain.enabled(),
+                shortDomain.enabled(),
                 restricted
         ));
     }
@@ -59,9 +59,9 @@ public class CachedLinkResolutionQuery implements LinkResolutionQuery {
         return loaded;
     }
 
-    private Optional<DomainRuntimeState> loadDomain(LinkRuntimeFacts link) {
-        Optional<DomainRuntimeState> loaded = source.findDomain(link.domainId());
-        loaded.ifPresent(cache::putDomain);
+    private Optional<ShortDomainRuntimeState> loadShortDomain(LinkRuntimeFacts link) {
+        Optional<ShortDomainRuntimeState> loaded = source.findShortDomain(link.shortDomainId());
+        loaded.ifPresent(cache::putShortDomain);
         return loaded;
     }
 

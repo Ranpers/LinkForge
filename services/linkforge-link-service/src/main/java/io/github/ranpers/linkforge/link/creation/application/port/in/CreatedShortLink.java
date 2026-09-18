@@ -10,13 +10,13 @@ import java.util.UUID;
  *
  * @param id       新短链的唯一标识
  * @param linkCode 域名内唯一的短码
- * @param domainId 短链所属域名
+ * @param shortDomainId 短链所属域名
  * @param codeType 短码由系统生成或由调用者指定
  */
 public record CreatedShortLink(
         UUID id,
         String linkCode,
-        UUID domainId,
+        UUID shortDomainId,
         ShortCodeType codeType
 ) {
 
@@ -30,7 +30,7 @@ public record CreatedShortLink(
         return new CreatedShortLink(
                 link.id(),
                 link.linkCode(),
-                link.domainId(),
+                link.shortDomainId(),
                 link.codeType()
         );
     }

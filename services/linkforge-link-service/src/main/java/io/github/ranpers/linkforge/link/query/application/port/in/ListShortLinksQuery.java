@@ -11,7 +11,7 @@ public record ListShortLinksQuery(
         UUID actorUserId,
         boolean canReadAll,
         UUID createdByUserId,
-        UUID domainId,
+        UUID shortDomainId,
         ShortLinkListStatus status,
         String searchTerm,
         Instant cursorCreatedAt,

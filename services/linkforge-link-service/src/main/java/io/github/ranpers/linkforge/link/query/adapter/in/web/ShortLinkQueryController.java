@@ -34,7 +34,7 @@ public class ShortLinkQueryController {
     public CursorPageResponse<ShortLinkListItem> list(
             JwtAuthenticationToken authentication,
             @RequestParam(required = false) UUID createdByUserId,
-            @RequestParam(required = false) UUID domainId,
+            @RequestParam(required = false) UUID shortDomainId,
             @RequestParam(required = false) ShortLinkListStatus status,
             @RequestParam(required = false) @Size(max = 64) String q,
             @RequestParam(required = false) String cursor,
@@ -48,7 +48,7 @@ public class ShortLinkQueryController {
                 actorUserId,
                 canReadAll,
                 createdByUserId,
-                domainId,
+                shortDomainId,
                 status,
                 q,
                 position.createdAt(),

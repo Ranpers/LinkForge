@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 public record LinkResolutionRow(
         java.util.UUID linkId,
-        java.util.UUID domainId,
+        java.util.UUID shortDomainId,
         java.util.UUID createdByUserId,
         String host,
         String linkCode,

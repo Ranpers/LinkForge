@@ -29,7 +29,7 @@ public class ShortLinkQueryService implements ListShortLinksUseCase {
                 : query.actorUserId();
         List<ShortLinkListItem> rows = shortLinkListQuery.find(new ShortLinkListCriteria(
                 effectiveCreator,
-                query.domainId(),
+                query.shortDomainId(),
                 query.status(),
                 query.searchTerm(),
                 query.cursorCreatedAt(),

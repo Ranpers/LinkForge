@@ -39,7 +39,7 @@ public class CreateShortLinkService implements CreateShortLinkUseCase {
         }
 
         LinkCreationAuthorization authorization = authorizationGateway.validate(
-                command.actorUserId(), command.domainId()
+                command.actorUserId(), command.shortDomainId()
         );
         if (!authorization.allowed()) {
             throw new LinkCreationDeniedException(

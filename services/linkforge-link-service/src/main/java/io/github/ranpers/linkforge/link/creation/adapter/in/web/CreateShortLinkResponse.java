@@ -8,14 +8,14 @@ import java.util.UUID;
 public record CreateShortLinkResponse(
         UUID id,
         String linkCode,
-        UUID domainId,
+        UUID shortDomainId,
         ShortCodeType codeType
 ) {
     static CreateShortLinkResponse from(CreatedShortLink link) {
         return new CreateShortLinkResponse(
                 link.id(),
                 link.linkCode(),
-                link.domainId(),
+                link.shortDomainId(),
                 link.codeType()
         );
     }

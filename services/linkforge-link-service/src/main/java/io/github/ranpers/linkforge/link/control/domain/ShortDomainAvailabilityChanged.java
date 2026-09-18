@@ -5,20 +5,20 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 
-public record DomainAvailabilityChanged(
+public record ShortDomainAvailabilityChanged(
         UUID eventId,
         int schemaVersion,
         String streamKey,
         long revision,
         OffsetDateTime occurredAt,
         ControlEventRequestId requestId,
-        UUID domainId,
+        UUID shortDomainId,
         String host,
         boolean enabled
 ) implements LinkControlEvent {
 
-    public DomainAvailabilityChanged {
-        Objects.requireNonNull(domainId, "domainId");
+    public ShortDomainAvailabilityChanged {
+        Objects.requireNonNull(shortDomainId, "shortDomainId");
         Objects.requireNonNull(host, "host");
         host = host.trim().toLowerCase(Locale.ROOT);
         if (host.isBlank() || host.length() > 253 || host.contains("/")
@@ -26,17 +26,17 @@ public record DomainAvailabilityChanged(
             throw new IllegalArgumentException("host 不是规范化域名");
         }
         LinkControlEventInvariant.requireEnvelope(
-                eventId, schemaVersion, streamKey, "DOMAIN:" + domainId, revision, occurredAt
+                eventId, schemaVersion, streamKey, "SHORT_DOMAIN:" + shortDomainId, revision, occurredAt
         );
     }
 
     @Override
     public LinkControlEventType eventType() {
-        return LinkControlEventType.DOMAIN_AVAILABILITY_CHANGED;
+        return LinkControlEventType.SHORT_DOMAIN_AVAILABILITY_CHANGED;
     }
 
     @Override
     public String partitionKey() {
-        return domainId.toString();
+        return shortDomainId.toString();
     }
 }
