@@ -4,7 +4,7 @@
   "title": "LinkForge Link Control Event",
   "oneOf": [
     {
-      "$ref": "#/$defs/domainAvailabilityChanged"
+      "$ref": "#/$defs/shortDomainAvailabilityChanged"
     },
     {
       "$ref": "#/$defs/userLinkSecurityRestrictionsChanged"
@@ -55,7 +55,7 @@
         }
       }
     },
-    "domainAvailabilityChanged": {
+    "shortDomainAvailabilityChanged": {
       "allOf": [
         {
           "$ref": "#/$defs/envelope"
@@ -63,18 +63,18 @@
         {
           "properties": {
             "eventType": {
-              "const": "DomainAvailabilityChanged"
+              "const": "ShortDomainAvailabilityChanged"
             },
             "payload": {
               "type": "object",
               "additionalProperties": false,
               "required": [
-                "domainId",
+                "shortDomainId",
                 "host",
                 "enabled"
               ],
               "properties": {
-                "domainId": {
+                "shortDomainId": {
                   "type": "string",
                   "format": "uuid"
                 },
