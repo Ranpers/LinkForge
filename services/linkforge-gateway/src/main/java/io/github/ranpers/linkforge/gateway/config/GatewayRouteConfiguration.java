@@ -174,7 +174,7 @@ public class GatewayRouteConfiguration {
                         .path(
                                 "/api/v1/users",
                                 "/api/v1/users/**",
-                                "/api/v1/domains/**"
+                                "/api/v1/short-domains/**"
                         )
                         .filters(filters -> filters.filter(apiLimit))
                         .uri("lb://linkforge-iam-service"))

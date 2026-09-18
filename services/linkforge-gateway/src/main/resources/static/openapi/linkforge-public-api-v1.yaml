@@ -3,13 +3,13 @@ info:
   title: LinkForge Public API
   version: 1.0.0
   description: >
-    Gateway 对外公开的用户、域名、短链、分组及跳转接口。所有路径都相对于提供本文档的
+    Gateway 对外公开的用户、短域名、短链、分组及跳转接口。所有路径都相对于提供本文档的
     网关地址，调用方按实际部署的主机与协议解析，因此这里不声明固定的 servers 条目。
 security:
   - bearerAuth: []
 tags:
   - name: Users
-  - name: Domains
+  - name: ShortDomains
   - name: Links
   - name: Groups
   - name: Security
@@ -255,11 +255,11 @@ paths:
           $ref: '#/components/responses/InternalError'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
-  /api/v1/domains:
+  /api/v1/short-domains:
     get:
-      tags: [Domains]
-      operationId: listDomains
-      summary: 分页查询域名
+      tags: [ShortDomains]
+      operationId: listShortDomains
+      summary: 分页查询短域名
       parameters:
         - name: enabled
           in: query
@@ -272,7 +272,7 @@ paths:
         '503':
           $ref: '#/components/responses/Unavailable'
         '200':
-          description: 域名页
+          description: 短域名页
           headers:
             X-Request-Id:
               $ref: '#/components/headers/RequestId'
@@ -287,7 +287,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DomainPage'
+                $ref: '#/components/schemas/ShortDomainPage'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -303,15 +303,15 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     post:
-      tags: [Domains]
-      operationId: createDomain
-      summary: 创建域名
+      tags: [ShortDomains]
+      operationId: createShortDomain
+      summary: 创建短域名
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateDomainRequest'
+              $ref: '#/components/schemas/CreateShortDomainRequest'
       responses:
         '401':
           $ref: '#/components/responses/Unauthorized'
@@ -333,7 +333,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Domain'
+                $ref: '#/components/schemas/ShortDomain'
         '400':
           $ref: '#/components/responses/BadRequest'
         '403':
@@ -352,19 +352,19 @@ paths:
           $ref: '#/components/responses/InternalError'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
-  /api/v1/domains/{domainId}:
+  /api/v1/short-domains/{shortDomainId}:
     patch:
-      tags: [Domains]
-      operationId: updateDomain
-      summary: 修改域名展示信息
+      tags: [ShortDomains]
+      operationId: updateShortDomain
+      summary: 修改短域名展示信息
       parameters:
-        - $ref: '#/components/parameters/DomainId'
+        - $ref: '#/components/parameters/ShortDomainId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateDomainRequest'
+              $ref: '#/components/schemas/UpdateShortDomainRequest'
       responses:
         '401':
           $ref: '#/components/responses/Unauthorized'
@@ -401,13 +401,13 @@ paths:
           $ref: '#/components/responses/InternalError'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
-  /api/v1/domains/{domainId}/availability:
+  /api/v1/short-domains/{shortDomainId}/availability:
     patch:
-      tags: [Domains]
-      operationId: changeDomainAvailability
-      summary: 修改域名可用状态
+      tags: [ShortDomains]
+      operationId: changeShortDomainAvailability
+      summary: 修改短域名可用状态
       parameters:
-        - $ref: '#/components/parameters/DomainId'
+        - $ref: '#/components/parameters/ShortDomainId'
       requestBody:
         required: true
         content:
@@ -519,7 +519,7 @@ paths:
           schema:
             type: string
             format: uuid
-        - name: domainId
+        - name: shortDomainId
           in: query
           schema:
             type: string
@@ -1011,8 +1011,8 @@ components:
       schema:
         type: string
         format: uuid
-    DomainId:
-      name: domainId
+    ShortDomainId:
+      name: shortDomainId
       in: path
       required: true
       schema:
@@ -1276,13 +1276,13 @@ components:
       required: [restrictionId]
       properties:
         restrictionId: {type: string, format: uuid}
-    CreateDomainRequest:
+    CreateShortDomainRequest:
       type: object
-      required: [domain]
+      required: [host]
       properties:
-        domain: {type: string, minLength: 1, maxLength: 253}
+        host: {type: string, minLength: 1, maxLength: 253}
         name: {type: [string, 'null'], maxLength: 128}
-    UpdateDomainRequest:
+    UpdateShortDomainRequest:
       type: object
       properties:
         name: {type: [string, 'null'], maxLength: 128}
@@ -1291,25 +1291,25 @@ components:
       required: [enabled]
       properties:
         enabled: {type: boolean}
-    Domain:
+    ShortDomain:
       type: object
-      required: [id, domain, enabled, revision, createdAt, updatedAt]
+      required: [id, host, enabled, revision, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
-        domain: {type: string}
+        host: {type: string}
         name: {type: [string, 'null']}
         enabled: {type: boolean}
         revision: {type: integer, format: int64}
         createdAt: {type: string, format: date-time}
         updatedAt: {type: string, format: date-time}
-    DomainPage:
+    ShortDomainPage:
       type: object
       required: [items, hasMore]
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/Domain'
+            $ref: '#/components/schemas/ShortDomain'
         nextCursor: {type: [string, 'null']}
         hasMore: {type: boolean}
     LinkCode:
@@ -1329,7 +1329,7 @@ components:
         swagger-ui、v3。
     CreateShortLinkRequest:
       type: object
-      required: [name, fullUrl, domainId]
+      required: [name, fullUrl, shortDomainId]
       properties:
         groupId: {type: [string, 'null'], format: uuid}
         name: {type: string, minLength: 1, maxLength: 64}
@@ -1345,16 +1345,16 @@ components:
           format: int32
           default: 0
           description: 同组展示排序值；省略时为 null，按 0 处理。取值范围为任意 32 位有符号整数。
-        domainId: {type: string, format: uuid}
+        shortDomainId: {type: string, format: uuid}
         expiresAt: {type: [string, 'null'], format: date-time}
     CreateShortLinkResponse:
       type: object
-      required: [id, linkCode, domainId, codeType]
+      required: [id, linkCode, shortDomainId, codeType]
       properties:
         id: {type: string, format: uuid}
         linkCode:
           $ref: '#/components/schemas/LinkCode'
-        domainId: {type: string, format: uuid}
+        shortDomainId: {type: string, format: uuid}
         codeType: {type: string, enum: [GENERATED, CUSTOM]}
     UpdateLinkTargetRequest:
       type: object
@@ -1367,7 +1367,7 @@ components:
           description: 绝对 HTTP(S) 目标地址；必须包含主机名，长度不超过 2048。
     ShortLink:
       type: object
-      required: [id, createdByUserId, name, linkCode, codeType, fullUrl, sortOrder, domainId, status, revision, createdAt, updatedAt]
+      required: [id, createdByUserId, name, linkCode, codeType, fullUrl, sortOrder, shortDomainId, status, revision, createdAt, updatedAt]
       properties:
         id: {type: string, format: uuid}
         createdByUserId: {type: string, format: uuid}
@@ -1378,7 +1378,7 @@ components:
         codeType: {type: string}
         fullUrl: {type: string, format: uri}
         sortOrder: {type: integer, format: int32}
-        domainId: {type: string, format: uuid}
+        shortDomainId: {type: string, format: uuid}
         status: {type: string}
         disabledReasonCode: {type: [string, 'null']}
         expiresAt: {type: [string, 'null'], format: date-time}
