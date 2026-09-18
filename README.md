@@ -5,7 +5,7 @@ LinkForge 是一个基于 Java 25 的短链接微服务平台，覆盖短链创�
 ## 主要能力
 
 - Gateway 统一路由、JWT 校验和分场景 Redis 令牌桶限流
-- OAuth2/OIDC 授权服务器、用户注册、RBAC 与域名授权
+- OAuth2/OIDC 授权服务器、用户注册、RBAC 与短域名授权
 - 短链接创建、解析、启停和目标地址更新
 - Redis 缓存与数据库回源，缓存失效时保持正确性
 - IAM 事务内写入 Outbox，异步发布安全控制事件，Link 幂等消费

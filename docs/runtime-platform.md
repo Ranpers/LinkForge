@@ -11,7 +11,7 @@ Gateway 只暴露明确的公共接口：
 | `iam-registration`            | `linkforge-iam-service`  | `POST /api/v1/users`               | 公开       |
 | `iam-authentication-metadata` | `linkforge-iam-service`  | `GET /.well-known/**`、`GET /oauth2/jwks` | 公开 |
 | `iam-authentication`          | `linkforge-iam-service`  | `/oauth2/**`、`/userinfo`、登录    | 按协议公开 |
-| `iam-api`                     | `linkforge-iam-service`  | 用户与域名管理                     | JWT        |
+| `iam-api`                     | `linkforge-iam-service`  | 用户与短域名管理                   | JWT        |
 | `link-api`                    | `linkforge-link-service` | 链接与分组管理                     | JWT        |
 | `link-redirect`               | `linkforge-link-service` | `/r/**`                            | 公开       |
 
