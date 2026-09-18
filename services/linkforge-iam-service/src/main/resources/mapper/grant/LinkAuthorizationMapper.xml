@@ -5,35 +5,35 @@
 
 <mapper namespace="io.github.ranpers.linkforge.iam.grant.adapter.out.persistence.LinkAuthorizationMapper">
 
-    <sql id="domainGranted">
+    <sql id="shortDomainGranted">
         EXISTS(
             SELECT 1
             FROM t_user_role user_role
-                     JOIN t_role_domain role_domain
+                     JOIN t_role_short_domain role_domain
                           ON role_domain.role_id = user_role.role_id
             WHERE user_role.user_id = #{userId}
-              AND role_domain.domain_id = #{domainId}
+              AND role_domain.short_domain_id = #{shortDomainId}
         ) OR EXISTS(
             SELECT 1
             FROM t_user_role user_role
-                     JOIN t_role_domain_group role_domain_group
+                     JOIN t_role_short_domain_group role_domain_group
                           ON role_domain_group.role_id = user_role.role_id
-                     JOIN t_domain_group_domain dgd
-                          ON dgd.domain_group_id = role_domain_group.domain_group_id
+                     JOIN t_short_domain_group_member dgd
+                          ON dgd.short_domain_group_id = role_domain_group.short_domain_group_id
             WHERE user_role.user_id = #{userId}
-              AND dgd.domain_id = #{domainId}
+              AND dgd.short_domain_id = #{shortDomainId}
         ) OR EXISTS(
             SELECT 1
-            FROM t_user_domain user_domain
+            FROM t_user_short_domain user_domain
             WHERE user_domain.user_id = #{userId}
-              AND user_domain.domain_id = #{domainId}
+              AND user_domain.short_domain_id = #{shortDomainId}
         ) OR EXISTS(
             SELECT 1
-            FROM t_user_domain_group user_domain_group
-                     JOIN t_domain_group_domain dgd
-                          ON dgd.domain_group_id = user_domain_group.domain_group_id
+            FROM t_user_short_domain_group user_domain_group
+                     JOIN t_short_domain_group_member dgd
+                          ON dgd.short_domain_group_id = user_domain_group.short_domain_group_id
             WHERE user_domain_group.user_id = #{userId}
-              AND dgd.domain_id = #{domainId}
+              AND dgd.short_domain_id = #{shortDomainId}
         )
     </sql>
 
@@ -59,16 +59,16 @@
                    ) AS action_allowed,
                    EXISTS(
                        SELECT 1
-                       FROM t_domain domain_state
-                       WHERE domain_state.id = #{domainId}
-                         AND domain_state.status = 1
-                   ) AS domain_enabled,
-                   (<include refid="domainGranted"/>) AS domain_granted
+                       FROM t_short_domain short_domain_state
+                       WHERE short_domain_state.id = #{shortDomainId}
+                         AND short_domain_state.status = 1
+                   ) AS short_domain_enabled,
+                   (<include refid="shortDomainGranted"/>) AS short_domain_granted
         )
         SELECT user_enabled,
                action_allowed,
-               domain_enabled,
-               domain_granted
+               short_domain_enabled,
+               short_domain_granted
         FROM authorization_facts
     </select>
 
@@ -84,10 +84,10 @@
                    ) AS user_enabled,
                    EXISTS(
                        SELECT 1
-                       FROM t_domain domain_state
-                       WHERE domain_state.id = #{domainId}
-                         AND domain_state.status = 1
-                   ) AS domain_enabled,
+                       FROM t_short_domain short_domain_state
+                       WHERE short_domain_state.id = #{shortDomainId}
+                         AND short_domain_state.status = 1
+                   ) AS short_domain_enabled,
                    EXISTS(
                        SELECT 1
                        FROM t_user_role user_role
@@ -110,11 +110,11 @@
                            WHERE user_role.user_id = #{userId}
                              AND permission.code = #{actionPermission}
                        )
-                       AND (<include refid="domainGranted"/>)
+                       AND (<include refid="shortDomainGranted"/>)
                    ) AS own_management_allowed
         )
         SELECT user_enabled,
-               domain_enabled,
+               short_domain_enabled,
                global_management_allowed,
                own_management_allowed
         FROM management_facts

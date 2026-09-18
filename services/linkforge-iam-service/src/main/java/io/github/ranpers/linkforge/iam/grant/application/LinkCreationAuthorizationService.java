@@ -29,14 +29,14 @@ public class LinkCreationAuthorizationService implements ValidateLinkCreationAut
 
     @Override
     @Transactional(readOnly = true)
-    public LinkCreationAuthorization validate(UUID userId, UUID domainId) {
+    public LinkCreationAuthorization validate(UUID userId, UUID shortDomainId) {
         Objects.requireNonNull(userId, "userId 不能为空");
-        Objects.requireNonNull(domainId, "domainId 不能为空");
-        LinkCreationAuthorizationSnapshot snapshot = query.load(userId, domainId);
+        Objects.requireNonNull(shortDomainId, "shortDomainId 不能为空");
+        LinkCreationAuthorizationSnapshot snapshot = query.load(userId, shortDomainId);
         String reasonCode = reasonCode(snapshot);
         return new LinkCreationAuthorization(
                 userId,
-                domainId,
+                shortDomainId,
                 "ALLOWED".equals(reasonCode),
                 reasonCode,
                 decisionIdGenerator.nextId(),
@@ -51,11 +51,11 @@ public class LinkCreationAuthorizationService implements ValidateLinkCreationAut
         if (!snapshot.actionAllowed()) {
             return "ACTION_NOT_ALLOWED";
         }
-        if (!snapshot.domainEnabled()) {
-            return "DOMAIN_NOT_AVAILABLE";
+        if (!snapshot.shortDomainEnabled()) {
+            return "SHORT_DOMAIN_NOT_AVAILABLE";
         }
-        if (!snapshot.domainGranted()) {
-            return "DOMAIN_NOT_GRANTED";
+        if (!snapshot.shortDomainGranted()) {
+            return "SHORT_DOMAIN_NOT_GRANTED";
         }
         return "ALLOWED";
     }

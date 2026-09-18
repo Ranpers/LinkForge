@@ -10,12 +10,12 @@ public interface LinkAuthorizationMapper {
 
     LinkCreationAuthorizationRow findSnapshot(
             @Param("userId") UUID userId,
-            @Param("domainId") UUID domainId
+            @Param("shortDomainId") UUID shortDomainId
     );
 
     LinkManagementAuthorizationRow findManagementSnapshot(
             @Param("userId") UUID actorUserId,
-            @Param("domainId") UUID domainId,
+            @Param("shortDomainId") UUID shortDomainId,
             @Param("createdByUserId") UUID createdByUserId,
             @Param("actionPermission") String actionPermission
     );

@@ -24,7 +24,7 @@ public class LinkCreationAuthorizationController {
             @Valid @RequestBody LinkCreationAuthorizationRequest request
     ) {
         return LinkCreationAuthorizationResponse.from(
-                authorization.validate(request.userId(), request.domainId())
+                authorization.validate(request.userId(), request.shortDomainId())
         );
     }
 }

@@ -54,21 +54,21 @@ CREATE TABLE t_role_permission
 );
 CREATE INDEX idx_role_permission_permission_role ON t_role_permission (permission_id, role_id);
 
-CREATE TABLE t_domain
+CREATE TABLE t_short_domain
 (
     id             uuid PRIMARY KEY DEFAULT uuidv7(),
-    domain         varchar(253) NOT NULL UNIQUE,
+    host           varchar(253) NOT NULL UNIQUE,
     name           varchar(128),
     status         smallint     NOT NULL DEFAULT 1,
     state_revision bigint       NOT NULL DEFAULT 1,
     created_at     timestamptz  NOT NULL DEFAULT now(),
     updated_at     timestamptz  NOT NULL DEFAULT now(),
-    CONSTRAINT ck_domain_status CHECK (status IN (0, 1)),
-    CONSTRAINT ck_domain_state_revision CHECK (state_revision >= 1)
+    CONSTRAINT ck_short_domain_status CHECK (status IN (0, 1)),
+    CONSTRAINT ck_short_domain_state_revision CHECK (state_revision >= 1)
 );
-COMMENT ON COLUMN t_domain.domain IS 'Normalized lowercase short-link host without scheme, port, path, or trailing dot';
+COMMENT ON COLUMN t_short_domain.host IS 'Normalized lowercase short-link host without scheme, port, path, or trailing dot';
 
-CREATE TABLE t_domain_group
+CREATE TABLE t_short_domain_group
 (
     id         uuid PRIMARY KEY DEFAULT uuidv7(),
     code       varchar(64)  NOT NULL UNIQUE,
@@ -77,50 +77,51 @@ CREATE TABLE t_domain_group
     updated_at timestamptz  NOT NULL DEFAULT now()
 );
 
-CREATE TABLE t_domain_group_domain
+CREATE TABLE t_short_domain_group_member
 (
-    domain_group_id uuid        NOT NULL REFERENCES t_domain_group (id) ON DELETE CASCADE,
-    domain_id       uuid        NOT NULL REFERENCES t_domain (id) ON DELETE CASCADE,
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (domain_group_id, domain_id)
+    short_domain_group_id uuid        NOT NULL REFERENCES t_short_domain_group (id) ON DELETE CASCADE,
+    short_domain_id       uuid        NOT NULL REFERENCES t_short_domain (id) ON DELETE CASCADE,
+    created_at            timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (short_domain_group_id, short_domain_id)
 );
-CREATE INDEX idx_domain_group_domain_domain_group ON t_domain_group_domain (domain_id, domain_group_id);
+CREATE INDEX idx_short_domain_group_member_group_domain
+    ON t_short_domain_group_member (short_domain_id, short_domain_group_id);
 
-CREATE TABLE t_role_domain
-(
-    role_id    uuid        NOT NULL REFERENCES t_role (id) ON DELETE CASCADE,
-    domain_id  uuid        NOT NULL REFERENCES t_domain (id) ON DELETE CASCADE,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (role_id, domain_id)
-);
-CREATE INDEX idx_role_domain_domain_role ON t_role_domain (domain_id, role_id);
-
-CREATE TABLE t_role_domain_group
+CREATE TABLE t_role_short_domain
 (
     role_id         uuid        NOT NULL REFERENCES t_role (id) ON DELETE CASCADE,
-    domain_group_id uuid        NOT NULL REFERENCES t_domain_group (id) ON DELETE CASCADE,
+    short_domain_id uuid        NOT NULL REFERENCES t_short_domain (id) ON DELETE CASCADE,
     created_at      timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (role_id, domain_group_id)
+    PRIMARY KEY (role_id, short_domain_id)
 );
-CREATE INDEX idx_role_domain_group_group_role ON t_role_domain_group (domain_group_id, role_id);
+CREATE INDEX idx_role_short_domain_domain_role ON t_role_short_domain (short_domain_id, role_id);
 
-CREATE TABLE t_user_domain
+CREATE TABLE t_role_short_domain_group
 (
-    user_id    uuid        NOT NULL REFERENCES t_user (id) ON DELETE CASCADE,
-    domain_id  uuid        NOT NULL REFERENCES t_domain (id) ON DELETE CASCADE,
-    created_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (user_id, domain_id)
+    role_id               uuid        NOT NULL REFERENCES t_role (id) ON DELETE CASCADE,
+    short_domain_group_id uuid        NOT NULL REFERENCES t_short_domain_group (id) ON DELETE CASCADE,
+    created_at            timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (role_id, short_domain_group_id)
 );
-CREATE INDEX idx_user_domain_domain_user ON t_user_domain (domain_id, user_id);
+CREATE INDEX idx_role_short_domain_group_group_role ON t_role_short_domain_group (short_domain_group_id, role_id);
 
-CREATE TABLE t_user_domain_group
+CREATE TABLE t_user_short_domain
 (
     user_id         uuid        NOT NULL REFERENCES t_user (id) ON DELETE CASCADE,
-    domain_group_id uuid        NOT NULL REFERENCES t_domain_group (id) ON DELETE CASCADE,
+    short_domain_id uuid        NOT NULL REFERENCES t_short_domain (id) ON DELETE CASCADE,
     created_at      timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (user_id, domain_group_id)
+    PRIMARY KEY (user_id, short_domain_id)
 );
-CREATE INDEX idx_user_domain_group_group_user ON t_user_domain_group (domain_group_id, user_id);
+CREATE INDEX idx_user_short_domain_domain_user ON t_user_short_domain (short_domain_id, user_id);
+
+CREATE TABLE t_user_short_domain_group
+(
+    user_id               uuid        NOT NULL REFERENCES t_user (id) ON DELETE CASCADE,
+    short_domain_group_id uuid        NOT NULL REFERENCES t_short_domain_group (id) ON DELETE CASCADE,
+    created_at            timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, short_domain_group_id)
+);
+CREATE INDEX idx_user_short_domain_group_group_user ON t_user_short_domain_group (short_domain_group_id, user_id);
 
 CREATE TABLE t_user_link_security_restriction
 (
@@ -195,8 +196,8 @@ CREATE TABLE t_outbox_event
 CREATE INDEX idx_outbox_dispatch ON t_outbox_event (status, next_retry_at, created_at);
 
 INSERT INTO t_role (code, name, description)
-VALUES ('USER', '普通用户', '管理自己有权使用的域名下创建的资源'),
-       ('NORMAL_ADMIN', '普通管理员', '日常域名与短链运营管理'),
+VALUES ('USER', '普通用户', '管理自己有权使用的短域名下创建的资源'),
+       ('NORMAL_ADMIN', '普通管理员', '日常短域名与短链运营管理'),
        ('SYSTEM_ADMIN', '系统管理员', '系统全部管理能力');
 
 INSERT INTO t_permission (code, name)
@@ -213,15 +214,15 @@ VALUES ('user:read', '查看个人信息'),
        ('link:delete', '删除自己的短链'),
        ('link:manage:any', '管理任意短链'),
        ('stats:read', '查看统计'),
-       ('domain:create', '创建域名'),
-       ('domain:read', '查看域名'),
-       ('domain:update', '编辑域名'),
-       ('domain:disable', '停用域名'),
+       ('short-domain:create', '创建短域名'),
+       ('short-domain:read', '查看短域名'),
+       ('short-domain:update', '编辑短域名'),
+       ('short-domain:disable', '停用短域名'),
        ('security:manage', '执行安全处置'),
        ('role:read', '查看角色'),
        ('role:manage', '分配或撤销用户角色'),
-       ('grant:read', '查看域名授权'),
-       ('grant:manage', '授予或撤销域名授权');
+       ('grant:read', '查看短域名授权'),
+       ('grant:manage', '授予或撤销短域名授权');
 
 INSERT INTO t_role_permission (role_id, permission_id)
 SELECT role.id, permission.id
@@ -242,7 +243,7 @@ WHERE role.code = 'NORMAL_ADMIN'
       'user:read', 'group:read',
       'link:create', 'link:read', 'link:update', 'link:delete', 'link:manage:any',
       'stats:read',
-      'domain:create', 'domain:read', 'domain:update', 'domain:disable',
+      'short-domain:create', 'short-domain:read', 'short-domain:update', 'short-domain:disable',
       'grant:read', 'grant:manage'
   );
 
@@ -251,10 +252,10 @@ SELECT role.id, permission.id
 FROM t_role role CROSS JOIN t_permission permission
 WHERE role.code = 'SYSTEM_ADMIN';
 
-INSERT INTO t_domain (id, domain, name)
-VALUES ('01991d2e-0000-7000-8000-000000000001', 'go.linkforge.dev', '原型演示域名');
+INSERT INTO t_short_domain (id, host, name)
+VALUES ('01991d2e-0000-7000-8000-000000000001', 'go.linkforge.dev', '原型演示短域名');
 
-INSERT INTO t_role_domain (role_id, domain_id)
-SELECT role.id, domain.id
-FROM t_role role CROSS JOIN t_domain domain
-WHERE role.code = 'USER' AND domain.domain = 'go.linkforge.dev';
+INSERT INTO t_role_short_domain (role_id, short_domain_id)
+SELECT role.id, sd.id
+FROM t_role role CROSS JOIN t_short_domain sd
+WHERE role.code = 'USER' AND sd.host = 'go.linkforge.dev';

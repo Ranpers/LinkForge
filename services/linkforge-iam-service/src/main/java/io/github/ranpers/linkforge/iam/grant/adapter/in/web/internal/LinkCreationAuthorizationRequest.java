@@ -6,6 +6,6 @@ import java.util.UUID;
 
 public record LinkCreationAuthorizationRequest(
         @NotNull UUID userId,
-        @NotNull UUID domainId
+        @NotNull UUID shortDomainId
 ) {
 }

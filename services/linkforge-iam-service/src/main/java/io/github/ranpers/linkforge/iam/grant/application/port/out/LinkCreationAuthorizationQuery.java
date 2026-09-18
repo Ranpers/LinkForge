@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface LinkCreationAuthorizationQuery {
 
-    LinkCreationAuthorizationSnapshot load(UUID userId, UUID domainId);
+    LinkCreationAuthorizationSnapshot load(UUID userId, UUID shortDomainId);
 }

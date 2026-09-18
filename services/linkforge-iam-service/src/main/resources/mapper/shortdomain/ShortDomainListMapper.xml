@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.github.ranpers.linkforge.iam.shortdomain.adapter.out.persistence.query.ShortDomainListMapper">
+
+    <select id="find"
+            resultType="io.github.ranpers.linkforge.iam.shortdomain.application.port.in.ShortDomainListItem">
+        SELECT short_domain_row.id,
+               short_domain_row.host,
+               short_domain_row.name,
+               short_domain_row.status = 1 AS enabled,
+               short_domain_row.state_revision AS revision,
+               short_domain_row.created_at AS createdAt,
+               short_domain_row.updated_at AS updatedAt
+        FROM t_short_domain short_domain_row
+        WHERE (
+            #{criteria.canReadAll}
+            OR EXISTS (
+                SELECT 1 FROM t_user_short_domain direct_grant
+                WHERE direct_grant.user_id = #{criteria.actorUserId}
+                  AND direct_grant.short_domain_id = short_domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_role user_role
+                JOIN t_role_short_domain role_grant ON role_grant.role_id = user_role.role_id
+                WHERE user_role.user_id = #{criteria.actorUserId}
+                  AND role_grant.short_domain_id = short_domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_short_domain_group user_group
+                JOIN t_short_domain_group_member group_domain
+                  ON group_domain.short_domain_group_id = user_group.short_domain_group_id
+                WHERE user_group.user_id = #{criteria.actorUserId}
+                  AND group_domain.short_domain_id = short_domain_row.id
+            )
+            OR EXISTS (
+                SELECT 1
+                FROM t_user_role user_role
+                JOIN t_role_short_domain_group role_group ON role_group.role_id = user_role.role_id
+                JOIN t_short_domain_group_member group_domain
+                  ON group_domain.short_domain_group_id = role_group.short_domain_group_id
+                WHERE user_role.user_id = #{criteria.actorUserId}
+                  AND group_domain.short_domain_id = short_domain_row.id
+            )
+        )
+        <if test="criteria.enabled != null">
+            AND short_domain_row.status = CASE WHEN #{criteria.enabled} THEN 1 ELSE 0 END
+        </if>
+        <if test="criteria.searchTerm != null">
+            AND (
+                POSITION(lower(#{criteria.searchTerm}) IN lower(short_domain_row.host)) > 0
+                OR POSITION(lower(#{criteria.searchTerm}) IN lower(COALESCE(short_domain_row.name, ''))) > 0
+            )
+        </if>
+        <if test="criteria.cursorCreatedAt != null">
+            AND (short_domain_row.created_at, short_domain_row.id)
+                &lt; (#{criteria.cursorCreatedAt}, #{criteria.cursorId})
+        </if>
+        ORDER BY short_domain_row.created_at DESC, short_domain_row.id DESC
+        LIMIT #{criteria.fetchSize}
+    </select>
+
+</mapper>

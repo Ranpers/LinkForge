@@ -68,8 +68,8 @@ public class ResourceServerConfig {
                         .hasAuthority("SCOPE_internal.authorization.read")
                         .requestMatchers(HttpMethod.GET, "/api/v1/users")
                         .hasAuthority("user:manage")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/domains")
-                        .hasAnyAuthority("link:create", "domain:read")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/short-domains")
+                        .hasAnyAuthority("link:create", "short-domain:read")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(securityProblemHandler)

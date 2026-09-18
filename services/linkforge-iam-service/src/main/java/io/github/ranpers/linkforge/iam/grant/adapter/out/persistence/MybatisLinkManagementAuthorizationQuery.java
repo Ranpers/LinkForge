@@ -20,13 +20,13 @@ public class MybatisLinkManagementAuthorizationQuery
     @Override
     public LinkManagementAuthorizationSnapshot load(
             UUID actorUserId,
-            UUID domainId,
+            UUID shortDomainId,
             UUID createdByUserId,
             LinkManagementAction action
     ) {
         LinkManagementAuthorizationRow row = mapper.findManagementSnapshot(
                 actorUserId,
-                domainId,
+                shortDomainId,
                 createdByUserId,
                 action.permissionCode()
         );
@@ -35,7 +35,7 @@ public class MybatisLinkManagementAuthorizationQuery
         }
         return new LinkManagementAuthorizationSnapshot(
                 row.userEnabled(),
-                row.domainEnabled(),
+                row.shortDomainEnabled(),
                 row.globalManagementAllowed(),
                 row.ownManagementAllowed()
         );

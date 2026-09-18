@@ -1,0 +1,21 @@
+package io.github.ranpers.linkforge.iam.shortdomain.application.port.in;
+
+import io.github.ranpers.linkforge.iam.control.domain.ControlEventRequestId;
+
+import java.util.UUID;
+
+/**
+ * 创建域名的入参。
+ *
+ * @param actorUserId 发起操作的已认证用户，权限校验以其当前角色权限为准
+ * @param host        原始主机名，由 {@link io.github.ranpers.linkforge.iam.shortdomain.domain.ShortDomainHost} 归一化
+ * @param name        可为空的展示名称，不参与解析
+ * @param requestId     可为空；非空时是规范 UUID，原样写入本次操作产生的控制事件
+ */
+public record CreateShortDomainCommand(
+        UUID actorUserId,
+        String host,
+        String name,
+        ControlEventRequestId requestId
+) {
+}

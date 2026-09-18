@@ -26,7 +26,7 @@ public class LinkManagementAuthorizationController {
     ) {
         LinkManagementAuthorization result = authorization.validate(
                 request.actorUserId(),
-                request.domainId(),
+                request.shortDomainId(),
                 request.createdByUserId(),
                 request.action()
         );

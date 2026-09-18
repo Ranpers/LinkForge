@@ -33,16 +33,16 @@ public class LinkManagementAuthorizationService
     @Transactional(readOnly = true)
     public LinkManagementAuthorization validate(
             UUID actorUserId,
-            UUID domainId,
+            UUID shortDomainId,
             UUID createdByUserId,
             LinkManagementAction action
     ) {
         Objects.requireNonNull(actorUserId, "actorUserId");
-        Objects.requireNonNull(domainId, "domainId");
+        Objects.requireNonNull(shortDomainId, "shortDomainId");
         Objects.requireNonNull(createdByUserId, "createdByUserId");
         Objects.requireNonNull(action, "action");
         LinkManagementAuthorizationSnapshot snapshot =
-                query.load(actorUserId, domainId, createdByUserId, action);
+                query.load(actorUserId, shortDomainId, createdByUserId, action);
         String reasonCode = reasonCode(snapshot);
         return new LinkManagementAuthorization(
                 "ALLOWED".equals(reasonCode),
@@ -56,8 +56,8 @@ public class LinkManagementAuthorizationService
         if (!snapshot.userEnabled()) {
             return "USER_NOT_AVAILABLE";
         }
-        if (!snapshot.domainEnabled()) {
-            return "DOMAIN_NOT_AVAILABLE";
+        if (!snapshot.shortDomainEnabled()) {
+            return "SHORT_DOMAIN_NOT_AVAILABLE";
         }
         if (!snapshot.globalManagementAllowed() && !snapshot.ownManagementAllowed()) {
             return "LINK_MANAGEMENT_NOT_ALLOWED";
